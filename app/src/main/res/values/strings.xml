@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SecurityCheck</string>
+    <string name="recording">正在录像中,请稍后</string>
+    <string name="image_saved">图片保存成功</string>
+    <string name="image_saved_error">图片保存失败</string>
+    <string name="video_saved">视频保存成功</string>
+    <string name="video_saved_error">视频保存失败</string>
+</resources>
