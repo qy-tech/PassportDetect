@@ -1,4 +1,4 @@
-package com.qytech.securitycheck
+package com.qytech.securitycheck.extensions
 
 import android.content.Context
 import android.widget.Toast

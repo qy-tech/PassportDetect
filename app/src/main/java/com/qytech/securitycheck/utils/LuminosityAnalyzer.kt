@@ -1,4 +1,4 @@
-package com.qytech.securitycheck
+package com.qytech.securitycheck.utils
 
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
