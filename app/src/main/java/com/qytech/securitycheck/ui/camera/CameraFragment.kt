@@ -1,30 +1,30 @@
 package com.qytech.securitycheck.ui.camera
 
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
-import android.widget.CompoundButton
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.CameraView
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.qytech.securitycheck.FileUtils
-import com.qytech.securitycheck.LuminosityAnalyzer
+import com.qytech.securitycheck.*
 import com.qytech.securitycheck.R
-import com.qytech.securitycheck.showToast
+import com.qytech.securitycheck.databinding.CameraFragmentBinding
+import com.qytech.securitycheck.extensions.showToast
+import com.qytech.securitycheck.utils.FileUtils
+import com.qytech.securitycheck.utils.LuminosityAnalyzer
 import kotlinx.android.synthetic.main.camera_fragment.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -49,21 +49,13 @@ class CameraFragment : Fragment() {
         private const val FILENAME = "yyyy-MM-dd-HH-mm-ss"
         private const val PHOTO_EXTENSION = ".jpg"
         private const val VIDEO_EXTENSION = ".mp4"
-
-        private val BRIGHTNESS_LIST = arrayOf(
-            "/sys/class/leds/365nm-led/brightness",
-            "/sys/class/leds/410nm-led/brightness",
-            "/sys/class/leds/940nm-led/brightness",
-            "/sys/class/leds/White-led/brightness",
-        )
-        private const val BRIGHTNESS_HRLAMP = "/sys/class/leds/HRlamp-led/brightness"
-        private const val BRIGHTNESS_ON = "1"
-        private const val BRIGHTNESS_OFF = "0"
+        private const val VIDEO_DURATION = 5_000L
 
     }
 
 
     private lateinit var viewModel: CameraViewModel
+    private lateinit var dataBinding: CameraFragmentBinding
 
     private lateinit var preview: Preview
     private var imageCapture: ImageCapture? = null
@@ -71,72 +63,42 @@ class CameraFragment : Fragment() {
     private var imageAnalysis: ImageAnalysis? = null
     private lateinit var cameraExecutor: ExecutorService
     private var captureMode: CameraView.CaptureMode? = null
-    private lateinit var outputDirectory: File
     private var isRecording = false
 
-    private var takePictureIndex = 0
-
-    //    private lateinit var cameraSelector: CameraSelector
     private var cameraProvider: ProcessCameraProvider? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.camera_fragment, container, false)
+        dataBinding = CameraFragmentBinding.inflate(inflater, container, false)
+        return dataBinding.root
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(CameraViewModel::class.java)
+        dataBinding.lifecycleOwner = viewLifecycleOwner
+        dataBinding.viewModel = viewModel
         cameraExecutor = Executors.newSingleThreadExecutor()
         viewFinder.post {
             startCamera()
         }
         btn_take_pictures.setOnClickListener {
-            lifecycleScope.launch(Dispatchers.Main) {
-                outputDirectory = File(getOutputDirectory(), formatDate()).apply { mkdirs() }
-                BRIGHTNESS_LIST.forEach {
-                    takePicture(it)
-                    delay(500L)
-                }
-                delay(500L)
-                recordVideo(BRIGHTNESS_HRLAMP)
+            if (viewModel.currentBrightness.value == "HRlamp") {
+                recordVideo()
+            } else {
+                takePicture()
             }
         }
-        btn_picture_365nm.setOnClickListener(onClickListener)
-        btn_picture_410nm.setOnClickListener(onClickListener)
-        btn_picture_960nm.setOnClickListener(onClickListener)
-        btn_picture_White.setOnClickListener(onClickListener)
-        btn_record_video.setOnClickListener(onClickListener)
-        switch_brightness_365nm.setOnCheckedChangeListener(onCheckedChangeListener)
-        switch_brightness_410nm.setOnCheckedChangeListener(onCheckedChangeListener)
-        switch_brightness_960nm.setOnCheckedChangeListener(onCheckedChangeListener)
-        switch_brightness_HRlamp.setOnCheckedChangeListener(onCheckedChangeListener)
-        switch_brightness_whitenm.setOnCheckedChangeListener(onCheckedChangeListener)
         btn_picture_viewer.setOnClickListener {
-            openAlbum()
+            PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
-        toggleBrightness(false)
-    }
-
-    private fun toggleBrightness(toggle: Boolean) {
-        BRIGHTNESS_LIST.forEach {
-            FileUtils.write2File(File(it), if (toggle) BRIGHTNESS_ON else BRIGHTNESS_OFF)
-        }
-        FileUtils.write2File(
-            File(BRIGHTNESS_HRLAMP),
-            if (toggle) BRIGHTNESS_ON else BRIGHTNESS_OFF
-        )
-    }
-
-    private fun toggleBrightness(path: String, toggle: Boolean) {
-        FileUtils.write2File(File(path), if (toggle) BRIGHTNESS_ON else BRIGHTNESS_OFF)
     }
 
     private fun startCamera() {
@@ -223,24 +185,22 @@ class CameraFragment : Fragment() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
     }
 
-    private suspend fun takePicture(brightness: String) {
+    private fun takePicture() {
         if (isRecording) {
             showToast(R.string.recording)
             return
         }
         bindCameraUserCases(CameraView.CaptureMode.IMAGE)
         imageCapture?.let {
-            val photoFile = createFile(outputDirectory, PHOTO_EXTENSION)
+            val photoFile =
+                createFile(getOutputDirectory(), viewModel.currentBrightness.value, PHOTO_EXTENSION)
 
             // Create output options object which contains file + metadata
             val outputOptions = ImageCapture.OutputFileOptions
                 .Builder(photoFile)
                 .build()
-            FileUtils.write2File(File(brightness), BRIGHTNESS_ON)
-            delay(1500L)
             it.takePicture(
                 outputOptions,
                 cameraExecutor,
@@ -266,65 +226,69 @@ class CameraFragment : Fragment() {
                         lifecycleScope.launch(Dispatchers.Main) {
                             requireContext().showToast(R.string.image_saved_error)
                         }
-
                     }
                 })
-            delay(500L)
-            FileUtils.write2File(File(brightness), BRIGHTNESS_OFF)
-
         }
     }
 
     @SuppressLint("RestrictedApi")
-    private suspend fun recordVideo(brightness: String) {
+    private fun recordVideo() {
         if (isRecording) {
             showToast(R.string.recording)
             return
         }
-        bindCameraUserCases(CameraView.CaptureMode.VIDEO)
-        try {
-            videoCapture?.let {
-                val videoFile = createFile(outputDirectory, VIDEO_EXTENSION)
+        lifecycleScope.launch {
+            bindCameraUserCases(CameraView.CaptureMode.VIDEO)
+            try {
+                videoCapture?.let {
+                    val videoFile = createFile(
+                        getOutputDirectory(),
+                        viewModel.currentBrightness.value,
+                        VIDEO_EXTENSION
+                    )
 
-                // Create output options object which contains file + metadata
-                val outputOptions = VideoCapture.OutputFileOptions
-                    .Builder(videoFile)
-                    .build()
-                FileUtils.write2File(File(brightness), BRIGHTNESS_ON)
-                delay(1500L)
-                it.startRecording(
-                    outputOptions,
-                    cameraExecutor,
-                    object : VideoCapture.OnVideoSavedCallback {
-                        override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
-                            Timber.d("onVideoSaved message:  ${outputFileResults.savedUri}")
-                            notifyScanFile(outputFileResults.savedUri)
-                            lifecycleScope.launch(Dispatchers.Main) {
-                                requireContext().showToast(R.string.video_saved)
+                    // Create output options object which contains file + metadata
+                    val outputOptions = VideoCapture.OutputFileOptions
+                        .Builder(videoFile)
+                        .build()
+                    it.startRecording(
+                        outputOptions,
+                        cameraExecutor,
+                        object : VideoCapture.OnVideoSavedCallback {
+                            override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
+                                Timber.d("onVideoSaved message:  ${outputFileResults.savedUri}")
+                                notifyScanFile(outputFileResults.savedUri)
+                                lifecycleScope.launch(Dispatchers.Main) {
+                                    requireContext().showToast(R.string.video_saved)
+                                }
                             }
-                        }
 
-                        override fun onError(
-                            videoCaptureError: Int,
-                            message: String,
-                            cause: Throwable?
-                        ) {
-                            Timber.e("OnVideoSavedCallback error message: $message cause: $cause")
-                            lifecycleScope.launch(Dispatchers.Main) {
-                                requireContext().showToast(R.string.video_saved_error)
+                            override fun onError(
+                                videoCaptureError: Int,
+                                message: String,
+                                cause: Throwable?
+                            ) {
+                                Timber.e("OnVideoSavedCallback error message: $message cause: $cause")
+                                lifecycleScope.launch(Dispatchers.Main) {
+                                    requireContext().showToast(R.string.video_saved_error)
+                                }
                             }
-                        }
 
-                    })
-                isRecording = true
-                delay(15_000L)
-                it.stopRecording()
-                isRecording = false
-                FileUtils.write2File(File(brightness), BRIGHTNESS_OFF)
+                        })
+                    isRecording = true
+                    delay(VIDEO_DURATION)
+                    it.stopRecording()
+                    isRecording = false
+                    viewModel.toggleBrightness(
+                        CameraViewModel.BRIGHTNESS_MAP.getValue("HRlamp"),
+                        false
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+
     }
 
     /**
@@ -355,17 +319,20 @@ class CameraFragment : Fragment() {
     }
 
     private fun getOutputDirectory(): File {
-        val mediaDir = requireActivity().externalMediaDirs.firstOrNull()?.let {
-            File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
+        val storagePath = FileUtils.getStoragePath(requireContext())
+        val outputPath =
+            if (storagePath?.isNotBlank() == true) storagePath else Environment.getExternalStorageDirectory().absolutePath
+        return File(outputPath, getString(R.string.app_name)).also {
+            if (!it.exists()) {
+                it.mkdirs()
+            }
         }
-        return if (mediaDir != null && mediaDir.exists())
-            mediaDir else requireActivity().filesDir
     }
 
 
     /** Helper function used to create a timestamped file */
-    private fun createFile(baseFolder: File, extension: String) =
-        File(baseFolder, "${formatDate()}${extension}")
+    private fun createFile(baseFolder: File, brightness: String?, extension: String) =
+        File(baseFolder, "${formatDate()}_${brightness}${extension}")
 
     private fun formatDate() = SimpleDateFormat(FILENAME, Locale.getDefault())
         .format(System.currentTimeMillis())
@@ -381,85 +348,4 @@ class CameraFragment : Fragment() {
             Timber.d("notifyScanFile scanned into media store: $uri")
         }
     }
-
-    private fun openAssignFolder(file: File) {
-        if (!file.exists()) {
-            return
-        }
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            val contentUri: Uri = FileProvider.getUriForFile(
-                requireContext(),
-                "com.qytech.securitycheck.provider",
-                file
-            )
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            intent.setDataAndType(contentUri, "file/*")
-        } else {
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            intent.setDataAndType(Uri.fromFile(file), "file/*")
-        }
-        try {
-            startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun openAlbum() {
-        val intent = Intent(
-            Intent.ACTION_VIEW, Uri.parse(
-                "content://media/internal/images/media"
-            )
-        )
-        startActivity(intent)
-    }
-
-    private val onCheckedChangeListener =
-        CompoundButton.OnCheckedChangeListener { compoundButton, checked ->
-            when (compoundButton.id) {
-                R.id.switch_brightness_365nm -> {
-                    toggleBrightness(BRIGHTNESS_LIST[0], checked)
-                }
-                R.id.switch_brightness_410nm -> {
-                    toggleBrightness(BRIGHTNESS_LIST[1], checked)
-                }
-                R.id.switch_brightness_960nm -> {
-                    toggleBrightness(BRIGHTNESS_LIST[2], checked)
-                }
-                R.id.switch_brightness_whitenm -> {
-                    toggleBrightness(BRIGHTNESS_LIST[3], checked)
-                }
-                R.id.switch_brightness_HRlamp -> {
-                    toggleBrightness(BRIGHTNESS_HRLAMP, checked)
-                }
-            }
-        }
-
-    private val onClickListener = View.OnClickListener {
-        lifecycleScope.launch(Dispatchers.Main) {
-            outputDirectory = File(getOutputDirectory(), formatDate()).apply { mkdirs() }
-            when (it.id) {
-                R.id.btn_picture_365nm -> {
-                    takePicture(BRIGHTNESS_LIST[0])
-                }
-                R.id.btn_picture_410nm -> {
-                    takePicture(BRIGHTNESS_LIST[1])
-                }
-                R.id.btn_picture_960nm -> {
-                    takePicture(BRIGHTNESS_LIST[2])
-                }
-                R.id.btn_picture_White -> {
-                    takePicture(BRIGHTNESS_LIST[3])
-                }
-                R.id.btn_record_video -> {
-                    recordVideo(BRIGHTNESS_HRLAMP)
-                }
-            }
-        }
-    }
-
-
 }

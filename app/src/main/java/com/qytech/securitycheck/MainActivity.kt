@@ -7,7 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.qytech.securitycheck.ui.camera.CameraFragment
-import com.qytech.securitycheck.ui.main.MainFragment
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {

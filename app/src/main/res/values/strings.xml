@@ -1,8 +1,16 @@
 <resources>
-    <string name="app_name">SecurityCheck</string>
+    <string name="app_name">PassportDetect</string>
     <string name="recording">正在录像中,请稍后</string>
     <string name="image_saved">图片保存成功</string>
     <string name="image_saved_error">图片保存失败</string>
     <string name="video_saved">视频保存成功</string>
     <string name="video_saved_error">视频保存失败</string>
+    <string name="brightness_off">OFF</string>
+    <string name="brightness_365nm">365nm</string>
+    <string name="brightness_410nm">410nm</string>
+    <string name="brightness_960nm">960nm</string>
+    <string name="brightness_white">White</string>
+    <string name="brightness_hrlamp">HRlamp</string>
+    <string name="open_file_fail">文件异常,请检查文件</string>
+    <string name="file_not_exists">文件不存在,请检查文件</string>
 </resources>

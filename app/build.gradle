@@ -28,6 +28,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    buildFeatures {
+        dataBinding true
+    }
 }
 
 dependencies {
@@ -41,6 +44,8 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.2.0'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.2.0'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+
 
     // CameraX core library
     def camerax_version = '1.0.0-beta10'
@@ -61,7 +66,11 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     kapt 'com.github.bumptech.glide:compiler:4.11.0'
 
-    testImplementation 'junit:junit:4.13'
+    implementation 'cn.jzvd:jiaozivideoplayer:7.5.0'
+
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+
+    testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation "com.jakewharton.timber:timber:4.7.1"

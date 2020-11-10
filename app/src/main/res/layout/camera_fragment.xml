@@ -1,129 +1,146 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?><!--suppress AndroidUnknownAttribute -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.camera.CameraFragment">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
+    <data>
+
+        <variable
+            name="viewModel"
+            type="com.qytech.securitycheck.ui.camera.CameraViewModel" />
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        tools:context=".ui.camera.CameraFragment">
 
-    <ImageView
-        android:id="@+id/btn_take_pictures"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="48dp"
-        android:contentDescription="@string/app_name"
-        android:padding="20dp"
-        android:src="@drawable/ic_baseline_camera"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        <androidx.camera.view.PreviewView
+            android:id="@+id/viewFinder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="48dp"
-        android:layout_marginBottom="48dp"
-        android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <Button
-            android:id="@+id/btn_picture_365nm"
+        <ImageView
+            android:id="@+id/btn_take_pictures"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="365nm" />
+            android:layout_marginBottom="48dp"
+            android:contentDescription="@string/app_name"
+            android:padding="20dp"
+            android:src="@drawable/ic_baseline_camera"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
-        <Button
-            android:id="@+id/btn_picture_410nm"
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="410nm" />
+            android:layout_marginStart="48dp"
+            android:layout_marginBottom="48dp"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-        <Button
-            android:id="@+id/btn_picture_960nm"
+            <Button
+                android:id="@+id/btn_picture_365nm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:text="@string/brightness_365nm" />
+
+            <Button
+                android:id="@+id/btn_picture_410nm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:text="@string/brightness_410nm" />
+
+            <Button
+                android:id="@+id/btn_picture_960nm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:text="@string/brightness_960nm" />
+
+            <Button
+                android:id="@+id/btn_picture_White"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:text="@string/brightness_white" />
+
+            <Button
+                android:id="@+id/btn_record_video"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:text="@string/brightness_white" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btn_picture_viewer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="960nm" />
+            android:layout_marginStart="48dp"
+            android:layout_marginBottom="48dp"
+            android:contentDescription="@string/app_name"
+            android:padding="20dp"
+            android:src="@drawable/ic_outline_art_track"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:id="@+id/btn_picture_White"
+        <LinearLayout
+            android:id="@+id/rg_brightness"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="White" />
+            android:layout_marginEnd="48dp"
+            android:layout_marginBottom="48dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
-            android:id="@+id/btn_record_video"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="video" />
-    </LinearLayout>
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_brightness_365nm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:onCheckedChanged="@{viewModel::onCheckedChanged}"
+                android:text="@string/brightness_365nm" />
 
-    <ImageView
-        android:id="@+id/btn_picture_viewer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="48dp"
-        android:layout_marginBottom="48dp"
-        android:contentDescription="@string/app_name"
-        android:padding="20dp"
-        android:src="@drawable/ic_outline_art_track"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_brightness_410nm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:onCheckedChanged="@{viewModel::onCheckedChanged}"
+                android:text="@string/brightness_410nm" />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="48dp"
-        android:layout_marginBottom="48dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_brightness_960nm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:onCheckedChanged="@{viewModel::onCheckedChanged}"
+                android:text="@string/brightness_960nm" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_brightness_365nm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="365nm" />
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_brightness_white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:onCheckedChanged="@{viewModel::onCheckedChanged}"
+                android:text="@string/brightness_white" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_brightness_410nm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="410nm" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_brightness_960nm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="960nm" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_brightness_whitenm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="White" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_brightness_HRlamp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:text="HRlamp" />
-    </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_brightness_HRlamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:onCheckedChanged="@{viewModel::onCheckedChanged}"
+                android:text="@string/brightness_hrlamp" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
