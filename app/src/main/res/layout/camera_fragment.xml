@@ -19,7 +19,18 @@
         <androidx.camera.view.PreviewView
             android:id="@+id/viewFinder"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            app:scaleType="fitCenter" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="48dp"
+            android:layout_marginBottom="48dp"
+            android:onClick="@{viewModel::onClick}"
+            android:text="@{@string/hrlamp_interval(viewModel.interval)}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <ImageView
             android:id="@+id/btn_take_pictures"
@@ -63,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="@string/brightness_960nm" />
+                android:text="@string/brightness_940nm" />
 
             <Button
                 android:id="@+id/btn_picture_White"
@@ -124,7 +135,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
                 android:onCheckedChanged="@{viewModel::onCheckedChanged}"
-                android:text="@string/brightness_960nm" />
+                android:text="@string/brightness_940nm" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switch_brightness_white"

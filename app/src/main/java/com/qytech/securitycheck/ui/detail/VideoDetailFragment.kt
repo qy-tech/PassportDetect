@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import cn.jzvd.Jzvd
 import com.qytech.securitycheck.consts.ExtraConst
 import com.qytech.securitycheck.databinding.VideoDetailFragmentBinding
 
@@ -38,6 +39,11 @@ class VideoDetailFragment : Fragment() {
         dataBinding.viewModel = viewModel
         val videoPath = arguments?.getString(ExtraConst.FILE_PATH) ?: ""
         viewModel.setImagePath(videoPath)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Jzvd.releaseAllVideos();
     }
 
 }

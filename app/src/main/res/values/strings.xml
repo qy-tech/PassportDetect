@@ -8,9 +8,10 @@
     <string name="brightness_off">OFF</string>
     <string name="brightness_365nm">365nm</string>
     <string name="brightness_410nm">410nm</string>
-    <string name="brightness_960nm">960nm</string>
+    <string name="brightness_940nm">940nm</string>
     <string name="brightness_white">White</string>
     <string name="brightness_hrlamp">HRlamp</string>
     <string name="open_file_fail">文件异常,请检查文件</string>
     <string name="file_not_exists">文件不存在,请检查文件</string>
+    <string name="hrlamp_interval">跑马灯间隔时间%d ms</string>
 </resources>

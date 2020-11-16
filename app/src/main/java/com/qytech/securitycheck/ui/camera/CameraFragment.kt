@@ -19,7 +19,7 @@ import androidx.core.net.toFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.qytech.securitycheck.*
+import com.qytech.securitycheck.PreviewActivity
 import com.qytech.securitycheck.R
 import com.qytech.securitycheck.databinding.CameraFragmentBinding
 import com.qytech.securitycheck.extensions.showToast
@@ -283,6 +283,7 @@ class CameraFragment : Fragment() {
                         CameraViewModel.BRIGHTNESS_MAP.getValue("HRlamp"),
                         false
                     )
+                    dataBinding.switchBrightnessHRlamp.isChecked = false
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
