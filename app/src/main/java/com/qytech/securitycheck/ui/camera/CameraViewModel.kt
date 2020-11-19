@@ -2,12 +2,16 @@ package com.qytech.securitycheck.ui.camera
 
 import android.view.View
 import android.widget.CompoundButton
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.qytech.securitycheck.R
+import com.qytech.securitycheck.GlobalApplication
+import com.qytech.securitycheck.R.id
+import com.qytech.securitycheck.extension.showToast
 import com.qytech.securitycheck.utils.FileUtils
+import com.qytech.securitycheck.utils.SpUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -62,24 +66,34 @@ class CameraViewModel : ViewModel() {
 
     fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
         Timber.d("onCheckedChanged message:  ${buttonView?.id}")
+        val enroll = SpUtil.getData(GlobalApplication.instance, "enroll").toInt()
+        val idenntify = SpUtil.getData(GlobalApplication.instance, "identify").toInt()
         when (buttonView?.id) {
-            R.id.switch_brightness_365nm -> {
-                _currentBrightness.value = if (isChecked) LED_365NM else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_365NM), isChecked)
+            id.switch_brightness_365nm -> {
+                if (enroll > 0 && idenntify > 0) {
+                    _currentBrightness.value = if (isChecked) LED_365NM else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_365NM), isChecked)
+                }else{
+                    GlobalApplication.instance.showToast("请验证指纹")
+                }
             }
-            R.id.switch_brightness_410nm -> {
-                _currentBrightness.value = if (isChecked) LED_410NM else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_410NM), isChecked)
+            id.switch_brightness_410nm -> {
+                if (enroll > 0 && idenntify > 0) {
+                    _currentBrightness.value = if (isChecked) LED_410NM else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_410NM), isChecked)
+                }else{
+                    GlobalApplication.instance.showToast("请验证指纹")
+                }
             }
-            R.id.switch_brightness_960nm -> {
+            id.switch_brightness_960nm -> {
                 _currentBrightness.value = if (isChecked) LED_940NM else LED_OFF
                 toggleBrightness(BRIGHTNESS_MAP.getValue(LED_940NM), isChecked)
             }
-            R.id.switch_brightness_white -> {
+            id.switch_brightness_white -> {
                 _currentBrightness.value = if (isChecked) LED_WHITE else LED_OFF
                 toggleBrightness(BRIGHTNESS_MAP.getValue(LED_WHITE), isChecked)
             }
-            R.id.switch_brightness_HRlamp -> {
+            id.switch_brightness_HRlamp -> {
                 _currentBrightness.value = if (isChecked) LED_HRLAMP else LED_OFF
                 toggleBrightness(BRIGHTNESS_MAP.getValue(LED_HRLAMP), isChecked)
                 hrlampToggle(isChecked)

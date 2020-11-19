@@ -1,12 +1,14 @@
 package com.qytech.securitycheck
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.qytech.securitycheck.ui.camera.CameraFragment
+import kotlinx.android.synthetic.main.main_activity.*
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {

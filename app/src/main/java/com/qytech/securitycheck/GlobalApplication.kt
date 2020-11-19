@@ -12,5 +12,15 @@ class GlobalApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
+        gloApplication=this
+    }
+    companion object {
+        private lateinit var gloApplication: GlobalApplication
+
+        @get:Synchronized
+        val instance: GlobalApplication
+            get() {
+                return gloApplication
+            }
     }
 }
