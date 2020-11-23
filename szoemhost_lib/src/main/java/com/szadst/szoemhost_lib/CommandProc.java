@@ -171,7 +171,7 @@ public class CommandProc implements ICommandProc {
         }
 
         w_nTemplateNo = p_nTmpNo;
-        m_strPost = "Input your finger";
+        m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
         Run_Command_1P((short)DevComm.CMD_ENROLL_CODE, (short)w_nTemplateNo);
         return 0;
@@ -200,7 +200,7 @@ public class CommandProc implements ICommandProc {
         }
 
         w_nTemplateNo = p_nTmpNo;
-        m_strPost = "Input your finger";
+        m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
 
         Run_Command_1P((short)DevComm.CMD_VERIFY_CODE, (short)w_nTemplateNo);
@@ -225,7 +225,7 @@ public class CommandProc implements ICommandProc {
             return 0;
         }
 
-        m_strPost = "Input your finger";
+        m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
 
         Run_Command_NP((short)DevComm.CMD_IDENTIFY_CODE);
@@ -250,7 +250,7 @@ public class CommandProc implements ICommandProc {
             return 0;
         }
 
-        m_strPost = "Input your finger";
+        m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
 
         Run_Command_NP((short)DevComm.CMD_IDENTIFY_FREE_CODE);
@@ -585,7 +585,7 @@ public class CommandProc implements ICommandProc {
 
             m_bThreadWork = true;
 
-            m_strPost = "Input your finger";
+            m_strPost = "放置你的手指";
             m_hActivity.runOnUiThread(runShowStatus);
 
             //. Assemble command packet
@@ -818,7 +818,7 @@ public class CommandProc implements ICommandProc {
 
                 DevComm.getInstance(m_hActivity).memset(m_TemplateData, (byte)0, DevComm.SZ_TEMPLATE_SIZE);
 
-                m_strPost = "Input your finger";
+                m_strPost = "放置你的手指";
                 m_hActivity.runOnUiThread(runShowStatus);
 
                 //. Assemble command packet

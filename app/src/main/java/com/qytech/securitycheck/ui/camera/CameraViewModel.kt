@@ -2,16 +2,14 @@ package com.qytech.securitycheck.ui.camera
 
 import android.view.View
 import android.widget.CompoundButton
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.qytech.securitycheck.GlobalApplication
 import com.qytech.securitycheck.R.id
-import com.qytech.securitycheck.extension.showToast
 import com.qytech.securitycheck.utils.FileUtils
-import com.qytech.securitycheck.utils.SpUtil
+import com.szadst.szoemhost_lib.HostLib
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -22,12 +20,12 @@ import java.io.File
 class CameraViewModel : ViewModel() {
 
     companion object {
-        private const val LED_365NM = "365nm"
-        private const val LED_410NM = "410nm"
-        private const val LED_940NM = "940nm"
-        private const val LED_WHITE = "White"
-        private const val LED_HRLAMP = "HRlamp"
-        private const val LED_OFF = "default"
+        const val LED_365NM = "365nm"
+        const val LED_410NM = "410nm"
+        const val LED_940NM = "940nm"
+        const val LED_WHITE = "White"
+        const val LED_HRLAMP = "HRlamp"
+        const val LED_OFF = "default"
 
         val BRIGHTNESS_MAP = mapOf<String, String>(
             LED_365NM to "/sys/class/leds/365nm-led/brightness",
@@ -41,11 +39,14 @@ class CameraViewModel : ViewModel() {
         val HRLAMP_LIST_RIGHT = 16..30
         const val HRLAMP_PATH_FORMAT = "/sys/class/leds/led%d/brightness"
         private const val BRIGHTNESS_ON = "1"
-        private const val BRIGHTNESS_OFF = "0"
+        private var BRIGHTNESS_OFF = "0"
         private const val BRIGHTNESS_VALUE_MAX = "255"
     }
 
     private val _currentBrightness = MutableLiveData("default")
+    private val _currentSwitch = MutableLiveData<CompoundButton>()
+    val currentSwitch: LiveData<CompoundButton>
+        get() = _currentSwitch
     val currentBrightness: LiveData<String>
         get() = _currentBrightness
     private val _interval = MutableLiveData(100L)
@@ -66,24 +67,19 @@ class CameraViewModel : ViewModel() {
 
     fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
         Timber.d("onCheckedChanged message:  ${buttonView?.id}")
-        val enroll = SpUtil.getData(GlobalApplication.instance, "enroll").toInt()
-        val idenntify = SpUtil.getData(GlobalApplication.instance, "identify").toInt()
+        if (isChecked && HostLib.getInstance(GlobalApplication.instance).FPCmdProc().Run_CmdIdentify(false) <= 0) {
+            _currentSwitch.value = buttonView
+            buttonView?.isChecked = false
+            return
+        }
         when (buttonView?.id) {
             id.switch_brightness_365nm -> {
-                if (enroll > 0 && idenntify > 0) {
-                    _currentBrightness.value = if (isChecked) LED_365NM else LED_OFF
-                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_365NM), isChecked)
-                }else{
-                    GlobalApplication.instance.showToast("请验证指纹")
-                }
+                _currentBrightness.value = if (isChecked) LED_365NM else LED_OFF
+                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_365NM), isChecked)
             }
             id.switch_brightness_410nm -> {
-                if (enroll > 0 && idenntify > 0) {
-                    _currentBrightness.value = if (isChecked) LED_410NM else LED_OFF
-                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_410NM), isChecked)
-                }else{
-                    GlobalApplication.instance.showToast("请验证指纹")
-                }
+                _currentBrightness.value = if (isChecked) LED_410NM else LED_OFF
+                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_410NM), isChecked)
             }
             id.switch_brightness_960nm -> {
                 _currentBrightness.value = if (isChecked) LED_940NM else LED_OFF
@@ -152,7 +148,6 @@ class CameraViewModel : ViewModel() {
             hrlampToggle(_currentBrightness.value == LED_HRLAMP)
         }
     }
-
 
     override fun onCleared() {
         super.onCleared()
