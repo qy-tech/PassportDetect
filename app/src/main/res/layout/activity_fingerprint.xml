@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.fingerprint.FingerprintActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbars"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/app_name" />
+
+    <LinearLayout
+        android:padding="50dp"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:ignore="MissingConstraints">
+
+            <TextView
+                android:id="@+id/textDevice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设备 : "
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <Spinner
+                android:id="@+id/spnDevice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:ignore="MissingConstraints">
+
+            <TextView
+                android:id="@+id/textBaudrate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="波特率: "/>
+
+            <Spinner
+                android:id="@+id/spnBaudrate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:entries="@array/baud_rate" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            tools:ignore="MissingConstraints">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:visibility="invisible"
+                    android:layout_gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:weightSum="1">
+
+                    <TextView
+                        android:id="@+id/textTemplateNo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_weight="0.2"
+
+                        android:text="ID :"
+                        android:textSize="50sp" />
+
+                    <EditText
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:id="@+id/editUserID"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.8"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:layout_marginLeft="10dp"
+                        android:background="#6666"
+                        android:textSize="50sp"
+                        android:editable="true"
+                        android:inputType="number"
+                        android:text="1" />
+
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnEnroll"
+                    android:layout_width="match_parent"
+                    android:textSize="30sp"
+                    android:layout_height="80dp"
+                    android:text="录制指纹" />
+
+                <Button
+                    android:id="@+id/btnIdentify"
+                    android:layout_width="match_parent"
+                    android:textSize="30sp"
+                    android:layout_height="80dp"
+                    android:text="验证指纹" />
+
+                <Button
+                    android:id="@+id/btnGetEnrollCount"
+                    android:layout_width="match_parent"
+                    android:textSize="30sp"
+                    android:layout_height="80dp"
+                    android:text="指纹数量" />
+
+                <Button
+                    android:id="@+id/btnRemoveAll"
+                    android:layout_width="match_parent"
+                    android:textSize="30sp"
+                    android:layout_height="80dp"
+                    android:text="清除所有"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

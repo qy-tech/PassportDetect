@@ -1,13 +1,18 @@
 package com.qytech.securitycheck.ui.camera
 
-import android.view.View
+import android.app.PendingIntent.getActivity
+import android.view.*
 import android.widget.CompoundButton
+import android.widget.PopupWindow
+import android.widget.TextView
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.qytech.securitycheck.GlobalApplication
+import com.qytech.securitycheck.R
 import com.qytech.securitycheck.R.id
+import com.qytech.securitycheck.extension.showToast
 import com.qytech.securitycheck.utils.FileUtils
 import com.szadst.szoemhost_lib.HostLib
 import kotlinx.coroutines.Job
@@ -54,7 +59,7 @@ class CameraViewModel : ViewModel() {
         get() = _interval
 
     private var hrlampJob: Job? = null
-
+    var popupWindow: PopupWindow? = null
     private fun closeAllBrightness() {
         BRIGHTNESS_MAP.forEach {
             toggleBrightness(it.value, false)
@@ -67,8 +72,36 @@ class CameraViewModel : ViewModel() {
 
     fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
         Timber.d("onCheckedChanged message:  ${buttonView?.id}")
-        if (isChecked && HostLib.getInstance(GlobalApplication.instance).FPCmdProc().Run_CmdIdentify(false) <= 0) {
+        if (isChecked && HostLib.getInstance(GlobalApplication.instance).FPCmdProc()
+                .Run_CmdIdentify(false) <= 0
+        ) {
+            GlobalApplication.instance.showToast("请验证指纹")
+            val popupView =
+                LayoutInflater.from(buttonView?.context).inflate(R.layout.pop_fingerprint, null)
+            popupWindow = PopupWindow(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            val cancel = popupView.findViewById<TextView>(id.cancel)
+            cancel.setOnClickListener {
+                popupWindow!!.dismiss()
+                return@setOnClickListener
+            }
+            popupWindow!!.contentView = popupView
+            popupWindow!!.isClippingEnabled = true
+            popupWindow!!.isOutsideTouchable = false
+            popupWindow!!.isFocusable = false
+            popupWindow!!.showAtLocation(
+                popupView,
+                Gravity.CENTER or Gravity.CENTER_HORIZONTAL,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
             _currentSwitch.value = buttonView
+            buttonView?.isChecked = false
+            return
+        }
+        if (popupWindow?.isShowing!! && popupWindow != null) {
             buttonView?.isChecked = false
             return
         }

@@ -37,8 +37,8 @@ public class CommandProc implements ICommandProc {
         this.m_hActivity = parentActivity;
 
         m_bThreadWork = false;
-        m_binImage = new byte[1024*100];
-        m_bmpImage = new byte[1024*100];
+        m_binImage = new byte[1024 * 100];
+        m_bmpImage = new byte[1024 * 100];
     }
 
     public static CommandProc getInstance(Activity parentActivity) {
@@ -58,8 +58,8 @@ public class CommandProc implements ICommandProc {
                 return 1; // failed init device
             }
         }
-        if (DevComm.getInstance(m_hActivity).Run_TestConnection() ==  (short)DevComm.ERR_SUCCESS) {
-            if (DevComm.getInstance(m_hActivity).Run_GetDeviceInfo() == (short)DevComm.ERR_SUCCESS) {
+        if (DevComm.getInstance(m_hActivity).Run_TestConnection() == (short) DevComm.ERR_SUCCESS) {
+            if (DevComm.getInstance(m_hActivity).Run_GetDeviceInfo() == (short) DevComm.ERR_SUCCESS) {
                 return 0; // success
             }
         }
@@ -91,22 +91,18 @@ public class CommandProc implements ICommandProc {
             public void run() {
                 boolean w_bRet;
                 // Init Packet
-                DevComm.getInstance(m_hActivity).InitPacket2((short)DevComm.CMD_FP_CANCEL_CODE, true);
-                DevComm.getInstance(m_hActivity).SetDataLen2((short)0x00);
+                DevComm.getInstance(m_hActivity).InitPacket2((short) DevComm.CMD_FP_CANCEL_CODE, true);
+                DevComm.getInstance(m_hActivity).SetDataLen2((short) 0x00);
                 DevComm.getInstance(m_hActivity).AddCheckSum2(true);
 
                 //. Send Packet
                 w_bRet = false;
-                if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
-                {
-                    w_bRet = DevComm.getInstance(m_hActivity).UART_SendCommand2((short)DevComm.CMD_FP_CANCEL_CODE);
+                if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3)) {
+                    w_bRet = DevComm.getInstance(m_hActivity).UART_SendCommand2((short) DevComm.CMD_FP_CANCEL_CODE);
+                } else if (DevComm.getInstance(m_hActivity).m_nConnected == 2) {
+                    w_bRet = DevComm.getInstance(m_hActivity).USB_SendPacket2((short) DevComm.CMD_FP_CANCEL_CODE);
                 }
-                else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
-                {
-                    w_bRet = DevComm.getInstance(m_hActivity).USB_SendPacket2((short)DevComm.CMD_FP_CANCEL_CODE);
-                }
-                if (w_bRet != true)
-                {
+                if (w_bRet != true) {
                     m_strPost = "Result : Cancel Send Failed\r\n";
                     m_hActivity.runOnUiThread(runShowStatus);
                     m_hActivity.runOnUiThread(runCancelRet);
@@ -114,28 +110,22 @@ public class CommandProc implements ICommandProc {
                 }
 
                 //. Wait while processing cmd exit
-                while (m_bCmdDone == false){
+                while (m_bCmdDone == false) {
                     try {
                         Thread.currentThread().sleep(1);//毫秒
                     } catch (Exception e) {
                     }
                 }
 
-                if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
-                {
-                    w_bRet = DevComm.getInstance(m_hActivity).UART_ReceiveAck2((short)DevComm.CMD_FP_CANCEL_CODE);
+                if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3)) {
+                    w_bRet = DevComm.getInstance(m_hActivity).UART_ReceiveAck2((short) DevComm.CMD_FP_CANCEL_CODE);
+                } else if (DevComm.getInstance(m_hActivity).m_nConnected == 2) {
+                    w_bRet = DevComm.getInstance(m_hActivity).USB_ReceiveAck2((short) DevComm.CMD_FP_CANCEL_CODE);
                 }
-                else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
-                {
-                    w_bRet = DevComm.getInstance(m_hActivity).USB_ReceiveAck2((short)DevComm.CMD_FP_CANCEL_CODE);
-                }
-                if (w_bRet == true)
-                {
+                if (w_bRet == true) {
                     m_strPost = "Result : FP Cancel Success.";
                     m_hActivity.runOnUiThread(runCancelRet);
-                }
-                else
-                {
+                } else {
                     m_strPost = "Result : Cancel Failed\r\n";
                     m_hActivity.runOnUiThread(runCancelRet);
                 }
@@ -152,7 +142,7 @@ public class CommandProc implements ICommandProc {
         int w_nIntRet = 0;
 
         // check inputed template no
-        if(CheckInputTemplateNo(p_nTmpNo) == false){
+        if (CheckInputTemplateNo(p_nTmpNo) == false) {
             return 1;
         }
 
@@ -165,15 +155,14 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
         w_nTemplateNo = p_nTmpNo;
         m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
-        Run_Command_1P((short)DevComm.CMD_ENROLL_CODE, (short)w_nTemplateNo);
+        Run_Command_1P((short) DevComm.CMD_ENROLL_CODE, (short) w_nTemplateNo);
         return 0;
     }
 
@@ -182,7 +171,7 @@ public class CommandProc implements ICommandProc {
         int w_nIntRet = 0;
 
         // check inputed template no
-        if(CheckInputTemplateNo(p_nTmpNo) == false)
+        if (CheckInputTemplateNo(p_nTmpNo) == false)
             return 1;
 
         // check force
@@ -194,8 +183,7 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
@@ -203,7 +191,7 @@ public class CommandProc implements ICommandProc {
         m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
 
-        Run_Command_1P((short)DevComm.CMD_VERIFY_CODE, (short)w_nTemplateNo);
+        Run_Command_1P((short) DevComm.CMD_VERIFY_CODE, (short) w_nTemplateNo);
 
         return 0;
     }
@@ -220,15 +208,14 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
         m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
 
-        Run_Command_NP((short)DevComm.CMD_IDENTIFY_CODE);
+        Run_Command_NP((short) DevComm.CMD_IDENTIFY_CODE);
 
         return 0;
     }
@@ -245,15 +232,14 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
         m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
 
-        Run_Command_NP((short)DevComm.CMD_IDENTIFY_FREE_CODE);
+        Run_Command_NP((short) DevComm.CMD_IDENTIFY_FREE_CODE);
 
         return 0;
     }
@@ -270,19 +256,17 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
-        Run_Command_NP((short)DevComm.CMD_GET_EMPTY_ID_CODE);
+        Run_Command_NP((short) DevComm.CMD_GET_EMPTY_ID_CODE);
 
         return 0;
     }
 
     public int Run_CmdGetUserCount(final boolean p_bForce) {
         int w_nIntRet;
-
         // check force
         w_nIntRet = CheckForce(p_bForce, new IFPListener.FPCancelWaitListener() {
             @Override
@@ -292,15 +276,15 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
-        Run_Command_NP((short)DevComm.CMD_GET_ENROLL_COUNT_CODE);
+        Run_Command_NP((short) DevComm.CMD_GET_ENROLL_COUNT_CODE);
 
         return 0;
     }
+
     public int Run_CmdDeleteID(final int p_nTmpNo, final boolean p_bForce) {
         int w_nTemplateNo = 0;
         int w_nIntRet;
@@ -318,13 +302,12 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
         w_nTemplateNo = p_nTmpNo;
-        Run_Command_1P((short)DevComm.CMD_CLEAR_TEMPLATE_CODE, (short)w_nTemplateNo);
+        Run_Command_1P((short) DevComm.CMD_CLEAR_TEMPLATE_CODE, (short) w_nTemplateNo);
 
         return 0;
     }
@@ -341,18 +324,17 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
-        Run_Command_NP((short)DevComm.CMD_CLEAR_ALLTEMPLATE_CODE);
+        Run_Command_NP((short) DevComm.CMD_CLEAR_ALLTEMPLATE_CODE);
 
         return 0;
     }
 
     public int Run_CmdReadTemplate(final int p_nTmpNo, final boolean p_bForce) {
-        boolean	w_blRet = false;
+        boolean w_blRet = false;
         int w_nTemplateNo = 0;
         int w_nLen = 0;
         int w_nBufOffset = 0;
@@ -371,63 +353,58 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
         w_nTemplateNo = p_nTmpNo;
-        DevComm.getInstance(m_hActivity).memset(m_TemplateData, (byte)0, DevComm.SZ_MAX_RECORD_SIZE);
+        DevComm.getInstance(m_hActivity).memset(m_TemplateData, (byte) 0, DevComm.SZ_MAX_RECORD_SIZE);
 
         //. Assemble command packet
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_READ_TEMPLATE_CODE, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0002);
-        DevComm.getInstance(m_hActivity).SetCmdData((short)w_nTemplateNo, true);
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_READ_TEMPLATE_CODE, true);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0002);
+        DevComm.getInstance(m_hActivity).SetCmdData((short) w_nTemplateNo, true);
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
         m_dwCode = DevComm.CMD_READ_TEMPLATE_CODE;
-        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short)DevComm.CMD_READ_TEMPLATE_CODE);
+        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short) DevComm.CMD_READ_TEMPLATE_CODE);
         if (w_blRet == false) {
             CloseDevice();
             return 1;
         }
-        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short)DevComm.ERR_SUCCESS) {
+        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short) DevComm.ERR_SUCCESS) {
             SendResponseRet();
             return 1;
         }
 
         if (DevComm.getInstance(m_hActivity).GetCmdData(false) == DevComm.SZ_TEMPLATE_SIZE) {
-            w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short)DevComm.CMD_READ_TEMPLATE_CODE);
+            w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short) DevComm.CMD_READ_TEMPLATE_CODE);
             w_nLen = DevComm.SZ_TEMPLATE_SIZE;
             System.arraycopy(DevComm.getInstance(m_hActivity).m_abyPacket, 10, m_TemplateData, 0, DevComm.SZ_TEMPLATE_SIZE);
-        }
-        else {
+        } else {
             w_nLen = DevComm.getInstance(m_hActivity).GetCmdData(false);
             w_nBufOffset = 0;
 
             while (true) {
-                w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short)DevComm.CMD_READ_TEMPLATE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short) DevComm.CMD_READ_TEMPLATE_CODE);
 
                 if (w_blRet == false) {
                     break;
-                }
-                else {
+                } else {
                     if (DevComm.getInstance(m_hActivity).GetRetCode() == DevComm.ERR_SUCCESS) {
                         if (DevComm.getInstance(m_hActivity).GetDataLen() > (DevComm.DATA_SPLIT_UNIT + 4)) {
-                            DevComm.getInstance(m_hActivity).SetCmdData((short)DevComm.ERR_FAIL, true);
-                            DevComm.getInstance(m_hActivity).SetCmdData((short)DevComm.ERR_INVALID_PARAM, false);
+                            DevComm.getInstance(m_hActivity).SetCmdData((short) DevComm.ERR_FAIL, true);
+                            DevComm.getInstance(m_hActivity).SetCmdData((short) DevComm.ERR_INVALID_PARAM, false);
                             w_blRet = false;
                             break;
-                        }
-                        else {
+                        } else {
                             System.arraycopy(DevComm.getInstance(m_hActivity).m_abyPacket, 10, m_TemplateData, w_nBufOffset, DevComm.getInstance(m_hActivity).GetDataLen() - 4);
                             w_nBufOffset = w_nBufOffset + (DevComm.getInstance(m_hActivity).GetDataLen() - 4);
                             if (w_nBufOffset == w_nLen) {
                                 break;
                             }
                         }
-                    }
-                    else {
+                    } else {
                         w_blRet = false;
                         break;
                     }
@@ -435,10 +412,9 @@ public class CommandProc implements ICommandProc {
             }
         }
 
-        if(w_blRet == false) {
+        if (w_blRet == false) {
             return 2;
-        }
-        else {
+        } else {
             m_nTemplateSize = w_nLen;
             m_hActivity.runOnUiThread(runSetTemplate);
             SendResponseRet();
@@ -467,8 +443,7 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
@@ -478,67 +453,66 @@ public class CommandProc implements ICommandProc {
         w_nTemplateNo = p_nTmpNo;
 
         // assemble command packet
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0002);
-        DevComm.getInstance(m_hActivity).SetCmdData((short)m_nTemplateSize, true);
-        DevComm.getInstance(m_hActivity).AddCheckSum( true );
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE, true);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0002);
+        DevComm.getInstance(m_hActivity).SetCmdData((short) m_nTemplateSize, true);
+        DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
         // send command packet to target
-        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short)DevComm.CMD_WRITE_TEMPLATE_CODE);
+        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short) DevComm.CMD_WRITE_TEMPLATE_CODE);
         if (w_blRet == false) {
             CloseDevice();
             return 1;
         }
 
-        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short)DevComm.ERR_SUCCESS) {
+        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short) DevComm.ERR_SUCCESS) {
             SendResponseRet();
             return 1;
         }
 
         if ((m_nTemplateSize == DevComm.SZ_TEMPLATE_SIZE) || (m_nTemplateSize == DevComm.OLD_USER_TEMPLATE_SIZE)) {
             // assemble data packet
-            DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE, false);
-            DevComm.getInstance(m_hActivity).SetDataLen((short)(m_nTemplateSize + 2));
-            DevComm.getInstance(m_hActivity).SetCmdData((short)w_nTemplateNo, true);
+            DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE, false);
+            DevComm.getInstance(m_hActivity).SetDataLen((short) (m_nTemplateSize + 2));
+            DevComm.getInstance(m_hActivity).SetCmdData((short) w_nTemplateNo, true);
             System.arraycopy(m_TemplateData, 0, DevComm.getInstance(m_hActivity).m_abyPacket, 8, m_nTemplateSize);
             DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
             // send data packet to target
-            w_blRet = DevComm.getInstance(m_hActivity).Send_DataPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE);
+            w_blRet = DevComm.getInstance(m_hActivity).Send_DataPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE);
             if (w_blRet == false) {
                 return 2;
             }
-        }
-        else {
+        } else {
             n = m_nTemplateSize / DevComm.DATA_SPLIT_UNIT;
             r = m_nTemplateSize % DevComm.DATA_SPLIT_UNIT;
 
             for (i = 0; i < n; i++) {
                 // assemble data packet
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE, false);
-                DevComm.getInstance(m_hActivity).SetDataLen((short)(DevComm.DATA_SPLIT_UNIT + 4));
-                DevComm.getInstance(m_hActivity).SetCmdData((short)w_nTemplateNo, true);
-                DevComm.getInstance(m_hActivity).SetCmdData((short)DevComm.DATA_SPLIT_UNIT, false);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE, false);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) (DevComm.DATA_SPLIT_UNIT + 4));
+                DevComm.getInstance(m_hActivity).SetCmdData((short) w_nTemplateNo, true);
+                DevComm.getInstance(m_hActivity).SetCmdData((short) DevComm.DATA_SPLIT_UNIT, false);
                 System.arraycopy(m_TemplateData, i * DevComm.DATA_SPLIT_UNIT, DevComm.getInstance(m_hActivity).m_abyPacket, 10, DevComm.DATA_SPLIT_UNIT);
                 DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
                 // send data packet to target
-                w_blRet = DevComm.getInstance(m_hActivity).Send_DataPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).Send_DataPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE);
                 if (w_blRet == false) {
                     return 2;
                 }
             }
 
             if (r > 0) {
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE, false);
-                DevComm.getInstance(m_hActivity).SetDataLen((short)(r + 4));
-                DevComm.getInstance(m_hActivity).SetCmdData((short)w_nTemplateNo, true);
-                DevComm.getInstance(m_hActivity).SetCmdData((short)(r & 0xFFFF), false);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE, false);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) (r + 4));
+                DevComm.getInstance(m_hActivity).SetCmdData((short) w_nTemplateNo, true);
+                DevComm.getInstance(m_hActivity).SetCmdData((short) (r & 0xFFFF), false);
                 System.arraycopy(m_TemplateData, i * DevComm.DATA_SPLIT_UNIT, DevComm.getInstance(m_hActivity).m_abyPacket, 10, r);
                 DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
                 //. Send data packet to target
-                w_blRet = DevComm.getInstance(m_hActivity).Send_DataPacket((short)DevComm.CMD_WRITE_TEMPLATE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).Send_DataPacket((short) DevComm.CMD_WRITE_TEMPLATE_CODE);
                 if (w_blRet == false) {
                     return 2;
                 }
@@ -563,8 +537,7 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
@@ -581,94 +554,90 @@ public class CommandProc implements ICommandProc {
         new Thread(new Runnable() {
             //    		@Override
             public void run() {
-            boolean		w_blRet = false;
+                boolean w_blRet = false;
 
-            m_bThreadWork = true;
+                m_bThreadWork = true;
 
-            m_strPost = "放置你的手指";
-            m_hActivity.runOnUiThread(runShowStatus);
+                m_strPost = "放置你的手指";
+                m_hActivity.runOnUiThread(runShowStatus);
 
-            //. Assemble command packet
-            DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_UP_IMAGE_CODE, true);
-            DevComm.getInstance(m_hActivity).SetDataLen((short)0x00);
-            DevComm.getInstance(m_hActivity).AddCheckSum(true);
+                //. Assemble command packet
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_UP_IMAGE_CODE, true);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) 0x00);
+                DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
-            m_dwCode = (short)DevComm.CMD_UP_IMAGE_CODE;
+                m_dwCode = (short) DevComm.CMD_UP_IMAGE_CODE;
 
-            w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short)DevComm.CMD_UP_IMAGE_CODE);
-            if (w_blRet == false) {
-                m_bSendResult = w_blRet;
+                w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short) DevComm.CMD_UP_IMAGE_CODE);
+                if (w_blRet == false) {
+                    m_bSendResult = w_blRet;
 
-                m_hActivity.runOnUiThread(procRspPacket);
-                m_bThreadWork = false;
-                return; // goto
-            }
+                    m_hActivity.runOnUiThread(procRspPacket);
+                    m_bThreadWork = false;
+                    return; // goto
+                }
 
-            if (DevComm.getInstance(m_hActivity).GetRetCode() != DevComm.ERR_SUCCESS) {
-                m_bSendResult = w_blRet;
-                m_hActivity.runOnUiThread(procRspPacket);
-                m_bThreadWork = false;
-                return; // goto
-            }
+                if (DevComm.getInstance(m_hActivity).GetRetCode() != DevComm.ERR_SUCCESS) {
+                    m_bSendResult = w_blRet;
+                    m_hActivity.runOnUiThread(procRspPacket);
+                    m_bThreadWork = false;
+                    return; // goto
+                }
 
-            m_nImgWidth = (short)(((DevComm.getInstance(m_hActivity).m_abyPacket[9] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[8] & 0x000000FF));
-            m_nImgHeight = (short)(((DevComm.getInstance(m_hActivity).m_abyPacket[11] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[10] & 0x000000FF));
+                m_nImgWidth = (short) (((DevComm.getInstance(m_hActivity).m_abyPacket[9] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[8] & 0x000000FF));
+                m_nImgHeight = (short) (((DevComm.getInstance(m_hActivity).m_abyPacket[11] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[10] & 0x000000FF));
 
-            if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3)) {
-                while(true) {
-                    w_blRet = DevComm.getInstance(m_hActivity).UART_ReceiveDataPacket((short)DevComm.CMD_UP_IMAGE_CODE);
+                if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3)) {
+                    while (true) {
+                        w_blRet = DevComm.getInstance(m_hActivity).UART_ReceiveDataPacket((short) DevComm.CMD_UP_IMAGE_CODE);
 
-                    if (w_blRet == false) {
-                        m_bSendResult = w_blRet;
-                        m_hActivity.runOnUiThread(procRspPacket);
-                        m_bThreadWork = false;
-                        return; // goto
-                    }
-                    else {
-                        if (DevComm.getInstance(m_hActivity).GetRetCode() == DevComm.ERR_SUCCESS ) {
-                            if (DevComm.getInstance(m_hActivity).GetDataLen() > (DevComm.IMAGE_RECEIVE_UINT + 2)) {
+                        if (w_blRet == false) {
+                            m_bSendResult = w_blRet;
+                            m_hActivity.runOnUiThread(procRspPacket);
+                            m_bThreadWork = false;
+                            return; // goto
+                        } else {
+                            if (DevComm.getInstance(m_hActivity).GetRetCode() == DevComm.ERR_SUCCESS) {
+                                if (DevComm.getInstance(m_hActivity).GetDataLen() > (DevComm.IMAGE_RECEIVE_UINT + 2)) {
+                                    m_bSendResult = w_blRet;
+                                    m_hActivity.runOnUiThread(procRspPacket);
+                                    m_bThreadWork = false;
+                                    return; // goto
+                                } else {
+                                    if (m_nImageBufOffset == 0) {
+                                        m_strPost = "Uploading image...";
+                                        m_hActivity.runOnUiThread(runShowStatus);
+                                    }
+
+                                    System.arraycopy(DevComm.getInstance(m_hActivity).m_abyPacket, 8, m_binImage, m_nImageBufOffset, DevComm.getInstance(m_hActivity).GetDataLen() - 2);
+                                    m_nImageBufOffset = m_nImageBufOffset + (DevComm.getInstance(m_hActivity).GetDataLen() - 2);
+
+                                    if (m_nImageBufOffset == m_nImgWidth * m_nImgHeight) {
+                                        m_bSendResult = w_blRet;
+                                        m_hActivity.runOnUiThread(procRspPacket);
+                                        m_bThreadWork = false;
+                                        return; // goto
+                                    }
+                                }
+                            } else {
                                 m_bSendResult = w_blRet;
                                 m_hActivity.runOnUiThread(procRspPacket);
                                 m_bThreadWork = false;
                                 return; // goto
                             }
-                            else {
-                                if (m_nImageBufOffset == 0) {
-                                    m_strPost = "Uploading image...";
-                                    m_hActivity.runOnUiThread(runShowStatus);
-                                }
-
-                                System.arraycopy(DevComm.getInstance(m_hActivity).m_abyPacket, 8, m_binImage, m_nImageBufOffset, DevComm.getInstance(m_hActivity).GetDataLen() - 2);
-                                m_nImageBufOffset = m_nImageBufOffset + (DevComm.getInstance(m_hActivity).GetDataLen() - 2);
-
-                                if (m_nImageBufOffset == m_nImgWidth * m_nImgHeight) {
-                                    m_bSendResult = w_blRet;
-                                    m_hActivity.runOnUiThread(procRspPacket);
-                                    m_bThreadWork = false;
-                                    return; // goto
-                                }
-                            }
-                        }
-                        else {
-                            m_bSendResult = w_blRet;
-                            m_hActivity.runOnUiThread(procRspPacket);
-                            m_bThreadWork = false;
-                            return; // goto
                         }
                     }
+                } else {
+                    w_blRet = DevComm.getInstance(m_hActivity).USB_ReceiveImage(m_binImage, m_nImgWidth * m_nImgHeight);
                 }
-            }
-            else {
-                w_blRet = DevComm.getInstance(m_hActivity).USB_ReceiveImage(m_binImage, m_nImgWidth * m_nImgHeight);
-            }
 
-            m_bSendResult = w_blRet;
+                m_bSendResult = w_blRet;
 
-            m_hActivity.runOnUiThread(runSetImage);
+                m_hActivity.runOnUiThread(runSetImage);
 
-            m_hActivity.runOnUiThread(procRspPacket);
+                m_hActivity.runOnUiThread(procRspPacket);
 
-            m_bThreadWork = false;
+                m_bThreadWork = false;
             }
         }).start();
 
@@ -687,12 +656,11 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
-        Run_Command_NP((short)DevComm.CMD_GET_FW_VERSION_CODE);
+        Run_Command_NP((short) DevComm.CMD_GET_FW_VERSION_CODE);
 
         return 0;
     }
@@ -710,33 +678,28 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
-        if (p_szPassword.length() != 0 && p_szPassword.length() != 14)
-        {
+        if (p_szPassword.length() != 0 && p_szPassword.length() != 14) {
             m_strPost = "Invalid Device Password. \nPlease input valid device password(length=14)!";
             m_lsCmdProc.cmdProcShowText(m_strPost);
             return 1;
         }
 
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_SET_DEVPASS_CODE, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x000E); // 14
-        if (p_szPassword.length() == 0)
-        {
-            for (i = 0; i < 14; i ++)
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_SET_DEVPASS_CODE, true);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x000E); // 14
+        if (p_szPassword.length() == 0) {
+            for (i = 0; i < 14; i++)
                 DevComm.getInstance(m_hActivity).m_abyPacket[6 + i] = 0x00;
-        }
-        else
-        {
-            for (i = 0; i < 14; i ++)
-                DevComm.getInstance(m_hActivity).m_abyPacket[6 + i] = (byte)(p_szPassword.charAt(i) & 0xFF);
+        } else {
+            for (i = 0; i < 14; i++)
+                DevComm.getInstance(m_hActivity).m_abyPacket[6 + i] = (byte) (p_szPassword.charAt(i) & 0xFF);
         }
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
-        m_dwCode = (short)DevComm.CMD_SET_DEVPASS_CODE;
+        m_dwCode = (short) DevComm.CMD_SET_DEVPASS_CODE;
         StartSendThread();
 
         return 0;
@@ -755,26 +718,24 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
-        if (p_szPassword.length() != 14)
-        {
+        if (p_szPassword.length() != 14) {
             m_strPost = "Invalid Device Password. \nPlease input valid device password(length=14)!";
             m_lsCmdProc.cmdProcShowText(m_strPost);
             return 1;
         }
 
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_VERIFY_DEVPASS_CODE, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x000E); // 14
-        for (i = 0; i < 14; i ++)
-            DevComm.getInstance(m_hActivity).m_abyPacket[6 + i] = (byte)(p_szPassword.charAt(i) & 0xFF);
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_VERIFY_DEVPASS_CODE, true);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x000E); // 14
+        for (i = 0; i < 14; i++)
+            DevComm.getInstance(m_hActivity).m_abyPacket[6 + i] = (byte) (p_szPassword.charAt(i) & 0xFF);
 //    	System.arraycopy(m_editDevPassword.toString().toCharArray(), 0, DevComm.getInstance(m_hActivity).m_abyPacket, 6, 14);
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
-        m_dwCode = (short)DevComm.CMD_VERIFY_DEVPASS_CODE;
+        m_dwCode = (short) DevComm.CMD_VERIFY_DEVPASS_CODE;
         StartSendThread();
 
         return 0;
@@ -792,15 +753,13 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
         m_bCmdDone = false;
 
-        while (m_bThreadWork)
-        {
+        while (m_bThreadWork) {
             try {
                 Thread.currentThread().sleep(1);//毫秒
             } catch (Exception e) {
@@ -810,32 +769,31 @@ public class CommandProc implements ICommandProc {
         new Thread(new Runnable() {
             //    		@Override
             public void run() {
-                boolean		w_blRet = false;
-                int			w_nLen = 0;
-                int			w_nBufOffset = 0;
+                boolean w_blRet = false;
+                int w_nLen = 0;
+                int w_nBufOffset = 0;
 
                 m_bThreadWork = true;
 
-                DevComm.getInstance(m_hActivity).memset(m_TemplateData, (byte)0, DevComm.SZ_TEMPLATE_SIZE);
+                DevComm.getInstance(m_hActivity).memset(m_TemplateData, (byte) 0, DevComm.SZ_TEMPLATE_SIZE);
 
                 m_strPost = "放置你的手指";
                 m_hActivity.runOnUiThread(runShowStatus);
 
                 //. Assemble command packet
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE, true);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE, true);
                 DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
                 m_dwCode = DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE;
-                w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short)DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
-                if (w_blRet == false){
+                w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short) DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
+                if (w_blRet == false) {
                     m_bSendResult = w_blRet;
                     m_hActivity.runOnUiThread(procRspPacket);
                     m_bThreadWork = false;
                     return; // goto
                 }
 
-                if (DevComm.getInstance(m_hActivity).GetRetCode() != DevComm.ERR_SUCCESS)
-                {
+                if (DevComm.getInstance(m_hActivity).GetRetCode() != DevComm.ERR_SUCCESS) {
                     m_bSendResult = w_blRet;
                     m_hActivity.runOnUiThread(procRspPacket);
                     m_bThreadWork = false;
@@ -843,47 +801,33 @@ public class CommandProc implements ICommandProc {
                 }
 
                 // Receive template data
-                if (DevComm.getInstance(m_hActivity).GetCmdData(false) == DevComm.SZ_TEMPLATE_SIZE)
-                {
-                    w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short)DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
+                if (DevComm.getInstance(m_hActivity).GetCmdData(false) == DevComm.SZ_TEMPLATE_SIZE) {
+                    w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short) DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
                     w_nLen = DevComm.SZ_TEMPLATE_SIZE;
                     System.arraycopy(DevComm.getInstance(m_hActivity).m_abyPacket, 8, m_TemplateData, 0, DevComm.SZ_TEMPLATE_SIZE);
-                }
-                else
-                {
+                } else {
                     w_nLen = DevComm.getInstance(m_hActivity).GetCmdData(false);
                     w_nBufOffset = 0;
 
-                    while (true)
-                    {
-                        w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short)DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
-                        if (w_blRet == false)
-                        {
+                    while (true) {
+                        w_blRet = DevComm.getInstance(m_hActivity).Receive_DataPacket((short) DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
+                        if (w_blRet == false) {
                             break;
-                        }
-                        else
-                        {
-                            if (DevComm.getInstance(m_hActivity).GetRetCode() == DevComm.ERR_SUCCESS)
-                            {
-                                if (DevComm.getInstance(m_hActivity).GetDataLen() > (DevComm.DATA_SPLIT_UNIT + 2))
-                                {
-                                    DevComm.getInstance(m_hActivity).SetCmdData((short)DevComm.ERR_FAIL, true);
-                                    DevComm.getInstance(m_hActivity).SetCmdData((short)DevComm.ERR_INVALID_PARAM, false);
+                        } else {
+                            if (DevComm.getInstance(m_hActivity).GetRetCode() == DevComm.ERR_SUCCESS) {
+                                if (DevComm.getInstance(m_hActivity).GetDataLen() > (DevComm.DATA_SPLIT_UNIT + 2)) {
+                                    DevComm.getInstance(m_hActivity).SetCmdData((short) DevComm.ERR_FAIL, true);
+                                    DevComm.getInstance(m_hActivity).SetCmdData((short) DevComm.ERR_INVALID_PARAM, false);
                                     w_blRet = false;
                                     break;
-                                }
-                                else
-                                {
+                                } else {
                                     System.arraycopy(DevComm.getInstance(m_hActivity).m_abyPacket, 8, m_TemplateData, w_nBufOffset, DevComm.getInstance(m_hActivity).GetDataLen() - 2);
                                     w_nBufOffset = w_nBufOffset + (DevComm.getInstance(m_hActivity).GetDataLen() - 2);
-                                    if (w_nBufOffset == w_nLen)
-                                    {
+                                    if (w_nBufOffset == w_nLen) {
                                         break;
                                     }
                                 }
-                            }
-                            else
-                            {
+                            } else {
                                 w_blRet = false;
                                 break;
                             }
@@ -891,15 +835,12 @@ public class CommandProc implements ICommandProc {
                     }
                 }
 
-                if(w_blRet == false)
-                {
+                if (w_blRet == false) {
                     m_bSendResult = w_blRet;
                     m_hActivity.runOnUiThread(procRspPacket);
                     m_bThreadWork = false;
                     return; // goto
-                }
-                else
-                {
+                } else {
                     m_bSendResult = w_blRet;
                     m_hActivity.runOnUiThread(runSetTemplate);
                     m_hActivity.runOnUiThread(procRspPacket);
@@ -931,8 +872,7 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
@@ -944,24 +884,24 @@ public class CommandProc implements ICommandProc {
         w_nTemplateNo = p_nTmpNo;
 
         // assemble command packet
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0006);
-        DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short)w_nTemplateNo);
-        DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short)w_nTemplateNo);
-        DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short)m_nImgWidth);
-        DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short)m_nImgWidth);
-        DevComm.getInstance(m_hActivity).m_abyPacket[10] = DevComm.getInstance(m_hActivity).LOBYTE((short)m_nImgHeight);
-        DevComm.getInstance(m_hActivity).m_abyPacket[11] = DevComm.getInstance(m_hActivity).HIBYTE((short)m_nImgHeight);
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE, true);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0006);
+        DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short) w_nTemplateNo);
+        DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short) w_nTemplateNo);
+        DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short) m_nImgWidth);
+        DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short) m_nImgWidth);
+        DevComm.getInstance(m_hActivity).m_abyPacket[10] = DevComm.getInstance(m_hActivity).LOBYTE((short) m_nImgHeight);
+        DevComm.getInstance(m_hActivity).m_abyPacket[11] = DevComm.getInstance(m_hActivity).HIBYTE((short) m_nImgHeight);
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
-        m_dwCode = (short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE;
-        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE);
+        m_dwCode = (short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE;
+        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE);
         if (w_blRet == false) {
             CloseDevice();
             return 1;
         }
 
-        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short)DevComm.ERR_SUCCESS) {
+        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short) DevComm.ERR_SUCCESS) {
             SendResponseRet();
             return 1;
         }
@@ -976,35 +916,35 @@ public class CommandProc implements ICommandProc {
 
             for (i = 0; i < n; i++) {
                 // assemble data packet
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE, false);
-                DevComm.getInstance(m_hActivity).SetDataLen((short)(0x0004 + DevComm.SZ_TEMPLATE_SIZE));
-                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short)DevComm.IMAGE_RECEIVE_UINT);
-                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short)DevComm.IMAGE_RECEIVE_UINT);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE, false);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) (0x0004 + DevComm.SZ_TEMPLATE_SIZE));
+                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short) DevComm.IMAGE_RECEIVE_UINT);
+                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short) DevComm.IMAGE_RECEIVE_UINT);
                 System.arraycopy(m_binImage, i * DevComm.IMAGE_RECEIVE_UINT, DevComm.getInstance(m_hActivity).m_abyPacket, 10, DevComm.IMAGE_RECEIVE_UINT);
                 DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
-                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE);
                 if (!w_blRet) {
                     CloseDevice();
                 }
 
-                m_strPost = String.format("%d%%...", (i+1) * DevComm.IMAGE_RECEIVE_UINT * 100 / w_nImgSize);
+                m_strPost = String.format("%d%%...", (i + 1) * DevComm.IMAGE_RECEIVE_UINT * 100 / w_nImgSize);
                 m_lsCmdProc.cmdProcShowText(m_strPost);
             }
 
             if (r > 0) {
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE, false);
-                DevComm.getInstance(m_hActivity).SetDataLen((short)(0x0004 + DevComm.SZ_TEMPLATE_SIZE));
-                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short)r);
-                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short)r);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE, false);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) (0x0004 + DevComm.SZ_TEMPLATE_SIZE));
+                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short) r);
+                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short) r);
                 System.arraycopy(m_binImage, i * DevComm.IMAGE_RECEIVE_UINT, DevComm.getInstance(m_hActivity).m_abyPacket, 10, r);
                 DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
-                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE);
                 if (!w_blRet) {
                     CloseDevice();
                 }
@@ -1012,8 +952,7 @@ public class CommandProc implements ICommandProc {
 
             m_strPost = "100%...";
             m_lsCmdProc.cmdProcShowText(m_strPost);
-        }
-        else {
+        } else {
             w_blRet = DevComm.getInstance(m_hActivity).USB_DownImage(m_binImage, m_nImgWidth * m_nImgHeight);
 
             if (!w_blRet) {
@@ -1023,8 +962,8 @@ public class CommandProc implements ICommandProc {
         }
 
         // Identify
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_VERIFY_WITH_IMAGE_CODE, false);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0004);
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_VERIFY_WITH_IMAGE_CODE, false);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0004);
         DevComm.getInstance(m_hActivity).m_abyPacket[6] = 0;
         DevComm.getInstance(m_hActivity).m_abyPacket[7] = 0;
         DevComm.getInstance(m_hActivity).m_abyPacket[8] = 0;
@@ -1054,8 +993,7 @@ public class CommandProc implements ICommandProc {
         });
         if (w_nIntRet == 1) {
             return 99; // busy
-        }
-        else if (w_nIntRet == 2){
+        } else if (w_nIntRet == 2) {
             return 0;
         }
 
@@ -1065,20 +1003,20 @@ public class CommandProc implements ICommandProc {
         System.arraycopy(p_pImgBuf, 0, m_binImage, 0, p_nImgSize);
 
         // assemble command packet
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0004);
-        DevComm.getInstance(m_hActivity).SetCmdData((short)m_nImgWidth, true);
-        DevComm.getInstance(m_hActivity).SetCmdData((short)m_nImgHeight, false);
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, true);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0004);
+        DevComm.getInstance(m_hActivity).SetCmdData((short) m_nImgWidth, true);
+        DevComm.getInstance(m_hActivity).SetCmdData((short) m_nImgHeight, false);
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
-        m_dwCode = (short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE;
-        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE);
+        m_dwCode = (short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE;
+        w_blRet = DevComm.getInstance(m_hActivity).Send_Command((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE);
         if (w_blRet == false) {
             CloseDevice();
             return 1;
         }
 
-        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short)DevComm.ERR_SUCCESS) {
+        if (DevComm.getInstance(m_hActivity).GetRetCode() != (short) DevComm.ERR_SUCCESS) {
             SendResponseRet();
             return 1;
         }
@@ -1093,36 +1031,36 @@ public class CommandProc implements ICommandProc {
 
             for (i = 0; i < n; i++) {
                 // assemble data packet
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, false);
-                DevComm.getInstance(m_hActivity).SetDataLen((short)(0x0004 + DevComm.SZ_TEMPLATE_SIZE));
-                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short)DevComm.IMAGE_RECEIVE_UINT);
-                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short)DevComm.IMAGE_RECEIVE_UINT);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, false);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) (0x0004 + DevComm.SZ_TEMPLATE_SIZE));
+                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short) DevComm.IMAGE_RECEIVE_UINT);
+                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short) DevComm.IMAGE_RECEIVE_UINT);
                 System.arraycopy(m_binImage, i * DevComm.IMAGE_RECEIVE_UINT, DevComm.getInstance(m_hActivity).m_abyPacket, 10, DevComm.IMAGE_RECEIVE_UINT);
                 DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
-                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE);
                 if (!w_blRet) {
                     CloseDevice();
                     return 1;
                 }
 
-                m_strPost = String.format("%d%%...", (i+1) * DevComm.IMAGE_RECEIVE_UINT * 100 / w_nImgSize);
+                m_strPost = String.format("%d%%...", (i + 1) * DevComm.IMAGE_RECEIVE_UINT * 100 / w_nImgSize);
                 m_lsCmdProc.cmdProcShowText(m_strPost);
             }
 
             if (r > 0) {
-                DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, false);
-                DevComm.getInstance(m_hActivity).SetDataLen((short)(0x0004 + DevComm.SZ_TEMPLATE_SIZE));
-                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short)i);
-                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short)r);
-                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short)r);
+                DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, false);
+                DevComm.getInstance(m_hActivity).SetDataLen((short) (0x0004 + DevComm.SZ_TEMPLATE_SIZE));
+                DevComm.getInstance(m_hActivity).m_abyPacket[6] = DevComm.getInstance(m_hActivity).LOBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[7] = DevComm.getInstance(m_hActivity).HIBYTE((short) i);
+                DevComm.getInstance(m_hActivity).m_abyPacket[8] = DevComm.getInstance(m_hActivity).LOBYTE((short) r);
+                DevComm.getInstance(m_hActivity).m_abyPacket[9] = DevComm.getInstance(m_hActivity).HIBYTE((short) r);
                 System.arraycopy(m_binImage, i * DevComm.IMAGE_RECEIVE_UINT, DevComm.getInstance(m_hActivity).m_abyPacket, 10, r);
                 DevComm.getInstance(m_hActivity).AddCheckSum(false);
 
-                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE);
+                w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE);
                 if (!w_blRet) {
                     CloseDevice();
                     return 1;
@@ -1131,8 +1069,7 @@ public class CommandProc implements ICommandProc {
 
             m_strPost = "100%...";
             m_lsCmdProc.cmdProcShowText(m_strPost);
-        }
-        else {
+        } else {
             w_blRet = DevComm.getInstance(m_hActivity).USB_DownImage(m_binImage, m_nImgWidth * m_nImgHeight);
             if (!w_blRet) {
                 CloseDevice();
@@ -1141,8 +1078,8 @@ public class CommandProc implements ICommandProc {
         }
 
         // Identify
-        DevComm.getInstance(m_hActivity).InitPacket((short)DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, false);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0004);
+        DevComm.getInstance(m_hActivity).InitPacket((short) DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE, false);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0004);
         DevComm.getInstance(m_hActivity).m_abyPacket[6] = 0;
         DevComm.getInstance(m_hActivity).m_abyPacket[7] = 0;
         DevComm.getInstance(m_hActivity).m_abyPacket[8] = 0;
@@ -1158,8 +1095,7 @@ public class CommandProc implements ICommandProc {
         return 0;
     }
 
-    private void Run_Command_NP(short p_wCmd)
-    {
+    private void Run_Command_NP(short p_wCmd) {
         // assemble command packet
         DevComm.getInstance(m_hActivity).InitPacket(p_wCmd, true);
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
@@ -1168,11 +1104,10 @@ public class CommandProc implements ICommandProc {
         StartSendThread();
     }
 
-    private void Run_Command_1P(short p_wCmd, short p_wData)
-    {
+    private void Run_Command_1P(short p_wCmd, short p_wData) {
         // assemble command packet
         DevComm.getInstance(m_hActivity).InitPacket(p_wCmd, true);
-        DevComm.getInstance(m_hActivity).SetDataLen((short)0x0002);
+        DevComm.getInstance(m_hActivity).SetDataLen((short) 0x0002);
         DevComm.getInstance(m_hActivity).SetCmdData(p_wData, true);
         DevComm.getInstance(m_hActivity).AddCheckSum(true);
 
@@ -1180,22 +1115,19 @@ public class CommandProc implements ICommandProc {
         StartSendThread();
     }
 
-    private boolean CheckInputTemplateNo(int p_nTmpNo){
-        if(p_nTmpNo > (DevComm.MAX_RECORD_COUNT) || p_nTmpNo < 1)
-        {
-            m_lsCmdProc.cmdProcShowText("Please input correct user id(1~" + (short)DevComm.MAX_RECORD_COUNT + ")");
+    private boolean CheckInputTemplateNo(int p_nTmpNo) {
+        if (p_nTmpNo > (DevComm.MAX_RECORD_COUNT) || p_nTmpNo < 1) {
+            m_lsCmdProc.cmdProcShowText("Please input correct user id(1~" + (short) DevComm.MAX_RECORD_COUNT + ")");
             return false;
         }
 
         return true;
     }
 
-    public void StartSendThread()
-    {
+    public void StartSendThread() {
         m_bCmdDone = false;
 
-        while (m_bThreadWork)
-        {
+        while (m_bThreadWork) {
             try {
                 Thread.currentThread().sleep(1);//毫秒
             } catch (Exception e) {
@@ -1204,51 +1136,40 @@ public class CommandProc implements ICommandProc {
 
         new Thread(new Runnable() {
             public void run() {
-                boolean		w_blRet = false;
+                boolean w_blRet = false;
                 short w_wPrefix = 0;
 
                 m_bThreadWork = true;
 
-                w_wPrefix = (short)(((DevComm.getInstance(m_hActivity).m_abyPacket[1] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[0] & 0x000000FF));
-                if (w_wPrefix == (short)(DevComm.CMD_PREFIX_CODE))
-                {
-                    if (m_dwCode != (short)(DevComm.CMD_FP_CANCEL_CODE))
-                    {
+                w_wPrefix = (short) (((DevComm.getInstance(m_hActivity).m_abyPacket[1] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[0] & 0x000000FF));
+                if (w_wPrefix == (short) (DevComm.CMD_PREFIX_CODE)) {
+                    if (m_dwCode != (short) (DevComm.CMD_FP_CANCEL_CODE)) {
                         if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
                             w_blRet = DevComm.getInstance(m_hActivity).UART_SendCommand(m_dwCode);
                         else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
                             w_blRet = DevComm.getInstance(m_hActivity).USB_SendPacket(m_dwCode);
-                    }
-                    else
-                    {
+                    } else {
                         if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
                             w_blRet = DevComm.getInstance(m_hActivity).UART_ReceiveAck(m_dwCode, true);
                         else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
                             w_blRet = DevComm.getInstance(m_hActivity).USB_ReceiveAck(m_dwCode);
                     }
-                }
-                else if (w_wPrefix == (short)(DevComm.CMD_DATA_PREFIX_CODE))
-                {
+                } else if (w_wPrefix == (short) (DevComm.CMD_DATA_PREFIX_CODE)) {
                     if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
                         w_blRet = DevComm.getInstance(m_hActivity).UART_SendDataPacket(m_dwCode);
                     else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
                         w_blRet = DevComm.getInstance(m_hActivity).USB_SendDataPacket(m_dwCode);
-                }
-                else
-                {
-                    if (m_dwCode != (short)(DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE))
-                    {
+                } else {
+                    if (m_dwCode != (short) (DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE)) {
                         if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
                             w_blRet = DevComm.getInstance(m_hActivity).UART_ReceiveAck(m_dwCode, true);
                         else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
                             w_blRet = DevComm.getInstance(m_hActivity).USB_ReceiveAck(m_dwCode);
-                    }
-                    else
-                    {
+                    } else {
                         if ((DevComm.getInstance(m_hActivity).m_nConnected == 1) || (DevComm.getInstance(m_hActivity).m_nConnected == 3))
-                            w_blRet = DevComm.getInstance(m_hActivity).UART_ReceiveDataPacket((short)DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
+                            w_blRet = DevComm.getInstance(m_hActivity).UART_ReceiveDataPacket((short) DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
                         else if (DevComm.getInstance(m_hActivity).m_nConnected == 2)
-                            w_blRet = DevComm.getInstance(m_hActivity).USB_ReceiveDataPacket((short)DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
+                            w_blRet = DevComm.getInstance(m_hActivity).USB_ReceiveDataPacket((short) DevComm.CMD_FEATURE_OF_CAPTURED_FP_CODE);
                     }
                 }
                 m_bSendResult = w_blRet;
@@ -1289,19 +1210,13 @@ public class CommandProc implements ICommandProc {
     };
 
     Runnable procRspPacket = new Runnable() {
-        public void run()
-        {
-            if(m_bSendResult == false)
-            {
-                m_strPost = "Fail to receive response! \n Please check the connection to target.";
+        public void run() {
+            if (m_bSendResult == false) {
+                m_strPost = "接受响应失败! \n请检查与目标的连接";
                 m_lsCmdProc.cmdProcShowText(m_strPost);
-
                 m_bCmdDone = true;
-
                 return;
             }
-
-            // Display response packet
             SendResponseRet();
         }
     };
@@ -1312,7 +1227,7 @@ public class CommandProc implements ICommandProc {
         short w_nData1, w_nData2;
 
         // Display response packet
-        w_nCmd = (short)(((DevComm.getInstance(m_hActivity).m_abyPacket[3] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[2] & 0x000000FF));
+        w_nCmd = (short) (((DevComm.getInstance(m_hActivity).m_abyPacket[3] << 8) & 0x0000FF00) | (DevComm.getInstance(m_hActivity).m_abyPacket[2] & 0x000000FF));
         w_nRet = DevComm.getInstance(m_hActivity).MAKEWORD(DevComm.getInstance(m_hActivity).m_abyPacket[6], DevComm.getInstance(m_hActivity).m_abyPacket[7]);
         w_nData1 = DevComm.getInstance(m_hActivity).MAKEWORD(DevComm.getInstance(m_hActivity).m_abyPacket[8], DevComm.getInstance(m_hActivity).m_abyPacket[9]);
         w_nData2 = DevComm.getInstance(m_hActivity).MAKEWORD(DevComm.getInstance(m_hActivity).m_abyPacket[10], DevComm.getInstance(m_hActivity).m_abyPacket[11]);
@@ -1321,47 +1236,40 @@ public class CommandProc implements ICommandProc {
         LoopResponse(w_nCmd, w_nRet, w_nData1, w_nData2);
     }
 
-    private void LoopResponse(int p_nCode, int p_nRet, int p_nParam1, int p_nParam2)
-    {
+    private void LoopResponse(int p_nCode, int p_nRet, int p_nParam1, int p_nParam2) {
         m_strPost = "";
 
-        if ((p_nCode == (short)DevComm.CMD_IDENTIFY_FREE_CODE))
-        {
-            if ( p_nRet == (short)DevComm.ERR_SUCCESS ||
-                DevComm.getInstance(m_hActivity).LOBYTE((short)p_nParam1) != DevComm.ERR_NOT_AUTHORIZED &&
-                DevComm.getInstance(m_hActivity).LOBYTE((short)p_nParam1) != DevComm.ERR_FP_CANCEL &&
-                DevComm.getInstance(m_hActivity).LOBYTE((short)p_nParam1) != DevComm.ERR_INVALID_OPERATION_MODE &&
-                DevComm.getInstance(m_hActivity).LOBYTE((short)p_nParam1) != DevComm.ERR_ALL_TMPL_EMPTY )
-            {
-                DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte)0, 64 * 1024);
+        if ((p_nCode == (short) DevComm.CMD_IDENTIFY_FREE_CODE)) {
+            if (p_nRet == (short) DevComm.ERR_SUCCESS ||
+                    DevComm.getInstance(m_hActivity).LOBYTE((short) p_nParam1) != DevComm.ERR_NOT_AUTHORIZED &&
+                            DevComm.getInstance(m_hActivity).LOBYTE((short) p_nParam1) != DevComm.ERR_FP_CANCEL &&
+                            DevComm.getInstance(m_hActivity).LOBYTE((short) p_nParam1) != DevComm.ERR_INVALID_OPERATION_MODE &&
+                            DevComm.getInstance(m_hActivity).LOBYTE((short) p_nParam1) != DevComm.ERR_ALL_TMPL_EMPTY) {
+                DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte) 0, 64 * 1024);
                 StartSendThread();
                 return;
             }
         }
-        if ((p_nCode == (short)DevComm.CMD_ENROLL_CODE) ||
-                (p_nCode == (short)DevComm.CMD_CHANGE_TEMPLATE_CODE) )
-        {
-            switch(p_nParam1)
-            {
-                case (short)DevComm.NEED_RELEASE_FINGER:
-                case (short)DevComm.NEED_FIRST_SWEEP:
-                case (short)DevComm.NEED_SECOND_SWEEP:
-                case (short)DevComm.NEED_THIRD_SWEEP:
-                case (short)DevComm.ERR_BAD_QUALITY:
-                    DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte)0, 64 * 1024);
+        if ((p_nCode == (short) DevComm.CMD_ENROLL_CODE) ||
+                (p_nCode == (short) DevComm.CMD_CHANGE_TEMPLATE_CODE)) {
+            switch (p_nParam1) {
+                case (short) DevComm.NEED_RELEASE_FINGER:
+                case (short) DevComm.NEED_FIRST_SWEEP:
+                case (short) DevComm.NEED_SECOND_SWEEP:
+                case (short) DevComm.NEED_THIRD_SWEEP:
+                case (short) DevComm.ERR_BAD_QUALITY:
+                    DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte) 0, 64 * 1024);
                     StartSendThread();
                     return;
                 default:
                     break;
             }
         }
-        if ( (p_nCode == (short)DevComm.CMD_ENROLL_ONETIME_CODE) || (p_nCode == (short)DevComm.CMD_VERIFY_CODE) ||
-             (p_nCode == (short)DevComm.CMD_IDENTIFY_CODE) || (p_nCode == (short)DevComm.CMD_IDENTIFY_FREE_CODE))
-        {
-            switch(p_nParam1)
-            {
-                case (short)DevComm.NEED_RELEASE_FINGER:
-                    DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte)0, 64 * 1024);
+        if ((p_nCode == (short) DevComm.CMD_ENROLL_ONETIME_CODE) || (p_nCode == (short) DevComm.CMD_VERIFY_CODE) ||
+                (p_nCode == (short) DevComm.CMD_IDENTIFY_CODE) || (p_nCode == (short) DevComm.CMD_IDENTIFY_FREE_CODE)) {
+            switch (p_nParam1) {
+                case (short) DevComm.NEED_RELEASE_FINGER:
+                    DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte) 0, 64 * 1024);
                     StartSendThread();
                     return;
                 default:
@@ -1369,7 +1277,7 @@ public class CommandProc implements ICommandProc {
             }
         }
 
-        DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte)0, 64 * 1024);
+        DevComm.getInstance(m_hActivity).memset(DevComm.getInstance(m_hActivity).m_abyPacket, (byte) 0, 64 * 1024);
         m_bCmdDone = true;
     }
 

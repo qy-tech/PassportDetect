@@ -1,20 +1,18 @@
 package com.qytech.securitycheck.ui.camera
 
 import android.annotation.SuppressLint
-import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.webkit.MimeTypeMap
-import android.widget.AdapterView
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.CameraView
@@ -23,11 +21,12 @@ import androidx.core.net.toFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import cn.jzvd.JZUtils.getWindow
+import com.qytech.securitycheck.MainActivity
 import com.qytech.securitycheck.PreviewActivity
 import com.qytech.securitycheck.R
 import com.qytech.securitycheck.databinding.CameraFragmentBinding
 import com.qytech.securitycheck.extensions.showToast
+import com.qytech.securitycheck.ui.fingerprint.FingerprintActivity
 import com.qytech.securitycheck.utils.FileUtils
 import com.qytech.securitycheck.utils.LuminosityAnalyzer
 import com.szadst.szoemhost_lib.DevComm
@@ -39,13 +38,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.experimental.and
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -61,7 +57,6 @@ class CameraFragment : Fragment() {
         private const val PHOTO_EXTENSION = ".jpg"
         private const val VIDEO_EXTENSION = ".mp4"
         private const val VIDEO_DURATION = 5_000L
-
     }
 
     private lateinit var viewModel: CameraViewModel
@@ -76,197 +71,56 @@ class CameraFragment : Fragment() {
     private var cameraProvider: ProcessCameraProvider? = null
     var m_szDevice: String? = "/dev/ttyS4"
     var m_nBaudrate = 115200
-    var m_nUserID = 0
-    var m_strPost: String? = null
-    var m_nTemplateSize = 0
-    var m_bForce = false
-    lateinit var m_TemplateData: ByteArray
 
-    private fun GetInputTemplateNo(): Int {
-        val str: String
-        str = editUserID.getText().toString()
-        if (str.isEmpty()) {
-            showToast("请输入用户ID")
-            return -1
-        }
-        m_nUserID = try {
-            str.toInt()
-        } catch (e: NumberFormatException) {
-            showToast(String.format("请输入正确的用户ID(1~%d)", DevComm.MAX_RECORD_COUNT.toShort()))
-            return -1
-        }
-        return m_nUserID
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         HostLib.getInstance(activity).FPCmdProc().OpenDevice(m_szDevice, m_nBaudrate)
-
     }
 
-    fun WriteTemplateFile(p_nUserID: Int, pTemplate: ByteArray?, p_nSize: Int): Boolean {
-        val w_szSaveDirPath =
-            Environment.getExternalStorageDirectory().absolutePath + "/sz_template"
-        val w_fpDir = File(w_szSaveDirPath)
-        if (!w_fpDir.exists()) w_fpDir.mkdirs()
-        val w_fpTemplate =
-            File("$w_szSaveDirPath/$p_nUserID.fpt")
-        if (!w_fpTemplate.exists()) {
-            try {
-                w_fpTemplate.createNewFile()
-            } catch (e: IOException) {
-                e.printStackTrace()
-                return false
+    override fun onResume() {
+        super.onResume()
+        btn_fingerprint.setOnClickListener {
+            val intent = Intent(activity, FingerprintActivity::class.java)
+            startActivity(intent)
+        }
+        HostLib.getInstance(activity).FPCmdProc().SetListener(object : FPCommandListener {
+            override fun cmdProcReturn(
+                p_nCmdCode: Int,
+                p_nRetCode: Int,
+                p_nParam1: Int,
+                p_nParam2: Int
+            ) {
+
+                ProcResponsePacketfragment(p_nCmdCode, p_nRetCode, p_nParam1, p_nParam2)
             }
-        }
-        var w_foTemplate: FileOutputStream? = null
-        try {
-            w_foTemplate = FileOutputStream(w_fpTemplate)
-            w_foTemplate.write(pTemplate, 0, p_nSize)
-            w_foTemplate.close()
-            m_strPost += "\nSaved file path = $w_szSaveDirPath/$p_nUserID.fpt"
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-            return false
-        }
-        return true
+
+            override fun cmdProcReturnData(p_pData: ByteArray, p_nSize: Int) {}
+
+            override fun cmdProcShowText(p_szInfo: String) {}
+        }) {}
     }
 
 
-    private fun ProcResponsePacket(p_nCode: Int, p_nRet: Int, p_nParam1: Int, p_nParam2: Int) {
-        m_strPost = ""
+    private fun ProcResponsePacketfragment(
+        p_nCode: Int,
+        p_nRet: Int,
+        p_nParam1: Int,
+        p_nParam2: Int
+    ) {
         when (p_nCode) {
-            DevComm.CMD_ENROLL_CODE,
-            DevComm.CMD_VERIFY_CODE,
-            DevComm.CMD_IDENTIFY_CODE,
-            DevComm.CMD_IDENTIFY_FREE_CODE,
-            DevComm.CMD_ENROLL_ONETIME_CODE,
-            DevComm.CMD_CHANGE_TEMPLATE_CODE,
-            DevComm.CMD_VERIFY_WITH_DOWN_TMPL_CODE,
-            DevComm.CMD_IDENTIFY_WITH_DOWN_TMPL_CODE,
-            DevComm.CMD_VERIFY_WITH_IMAGE_CODE,
-            DevComm.CMD_IDENTIFY_WITH_IMAGE_CODE ->
-                if (p_nRet == DevComm.ERR_SUCCESS) {
-                    when (p_nParam1) {
-                        DevComm.NEED_RELEASE_FINGER -> m_strPost = ("收起手指")
-                        DevComm.NEED_FIRST_SWEEP -> m_strPost = ("放置手指")
-                        DevComm.NEED_SECOND_SWEEP -> m_strPost = ("再来二次")
-                        DevComm.NEED_THIRD_SWEEP -> m_strPost = ("再来一次")
-                        else -> {
-                            m_strPost = String.format("成功\r\n模板为 : %d", p_nParam1)
-                            viewModel.currentSwitch.value?.isChecked = true
-                            btn_picture_viewer.setOnClickListener {
-                                PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
-                            }
-                        }
-                    }
-                    showToast(m_strPost!!)
-                } else {
+            DevComm.CMD_IDENTIFY_CODE -> {
+                if (p_nRet != DevComm.ERR_SUCCESS) {
                     viewModel.currentSwitch.value?.isChecked = false
-                    m_strPost = String.format("失败\r\n")
-                    m_strPost += getErrorMsg(p_nParam1.toShort())
-                    showToast(m_strPost!!)
-                }
-            DevComm.CMD_GET_EMPTY_ID_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format("成功\r\n空ID : %d", p_nParam1)
-                showToast(m_strPost!!)
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                showToast(m_strPost!!)
-            }
-            DevComm.CMD_GET_ENROLL_COUNT_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format("成功\r\n注册数 : %d", p_nParam1)
-                showToast(m_strPost!!)
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                showToast(m_strPost!!)
-            }
-            DevComm.CMD_CLEAR_TEMPLATE_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format("成功\r\n模板为 : %d", p_nParam1)
-                showToast(m_strPost!!)
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                showToast(m_strPost!!)
-            }
-            DevComm.CMD_CLEAR_ALLTEMPLATE_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format(
-                    "成功\r\n清除模板 : %d",
-                    p_nParam1
-                )
-                showToast(m_strPost!!)
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                showToast(m_strPost!!)
-            }
-            DevComm.CMD_READ_TEMPLATE_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format("成功\r\n模板为 : %d", p_nParam1)
-                WriteTemplateFile(p_nParam1, m_TemplateData, m_nTemplateSize)
-                showToast(m_strPost!!)
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                showToast(m_strPost!!)
-            }
-            DevComm.CMD_WRITE_TEMPLATE_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format("成功\r\n模板 : %d", p_nParam1)
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                if (p_nParam1 == DevComm.ERR_DUPLICATION_ID) {
-                    m_strPost += String.format(" %d.", p_nParam2)
-                    showToast(m_strPost!!)
-                }
-                showToast(m_strPost!!)
-            }
-            DevComm.CMD_UP_IMAGE_CODE -> {
-                if (p_nRet == DevComm.ERR_SUCCESS) {
-                    m_strPost = String.format("Result : Receive Image Success")
+                    viewModel.popupWindow?.dismiss()
+                    showToast("指纹验证失败")
                 } else {
-                    m_strPost = String.format("Result : Fail\r\n")
-                    m_strPost += getErrorMsg(p_nParam1.toShort())
-                    showToast(m_strPost!!)
+                    viewModel.currentSwitch.value?.isChecked = true
+                    viewModel.popupWindow?.dismiss()
                 }
             }
-            DevComm.CMD_VERIFY_DEVPASS_CODE, DevComm.CMD_SET_DEVPASS_CODE, DevComm.CMD_EXIT_DEVPASS_CODE -> if (p_nRet == DevComm.ERR_SUCCESS) {
-                m_strPost = String.format("成功")
-            } else {
-                m_strPost = String.format("失败\r\n")
-                m_strPost += getErrorMsg(p_nParam1.toShort())
-                showToast(m_strPost!!)
-            }
         }
     }
-
-    fun getErrorMsg(p_wErrorCode: Short): String? {
-        return when (p_wErrorCode and 0xFF) {
-            DevComm.ERR_VERIFY.toShort() -> "证实指纹"
-            DevComm.ERR_IDENTIFY.toShort() -> "认出指纹"
-            DevComm.ERR_EMPTY_ID_NOEXIST.toShort() -> "空模板不存在"
-            DevComm.ERR_BROKEN_ID_NOEXIST.toShort() -> "模板破损不存在"
-            DevComm.ERR_TMPL_NOT_EMPTY.toShort() -> "此ID的模板已经存在"
-            DevComm.ERR_TMPL_EMPTY.toShort() -> "此模板已经为空"
-            DevComm.ERR_INVALID_TMPL_NO.toShort() -> "无效的模板"
-            DevComm.ERR_ALL_TMPL_EMPTY.toShort() -> "所有模板为空"
-            DevComm.ERR_INVALID_TMPL_DATA.toShort() -> "无效的模板数据"
-            DevComm.ERR_DUPLICATION_ID.toShort() -> "ID重复 : "
-            DevComm.ERR_TIME_OUT.toShort() -> "超时"
-            DevComm.ERR_NOT_AUTHORIZED.toShort() -> "设备未授权"
-            DevComm.ERR_EXCEPTION.toShort() -> "异常程序错误 "
-            DevComm.ERR_MEMORY.toShort() -> "内存错误 "
-            DevComm.ERR_INVALID_PARAM.toShort() -> "无效的参数"
-            DevComm.ERR_NO_RELEASE.toShort() -> "手指松开失败"
-            DevComm.ERR_INTERNAL.toShort() -> "内部错误"
-            DevComm.ERR_INVALID_OPERATION_MODE.toShort() -> "无效的操作模式"
-            DevComm.ERR_FP_NOT_DETECTED.toShort() -> "未检测到手指"
-            DevComm.ERR_ADJUST_SENSOR.toShort() -> "传感器调整失败"
-            else -> "失败"
-        }
-    }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -296,105 +150,8 @@ class CameraFragment : Fragment() {
         }
 
         btn_picture_viewer.setOnClickListener {
-            showToast("请验证指纹")
-            if (HostLib.getInstance(activity).FPCmdProc().Run_CmdIdentify(m_bForce)>0) {
-                PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
-            }else{
-                return@setOnClickListener
-            }
+            PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
         }
-
-        btnEnroll.setOnClickListener {
-            val w_nTemplateNo: Int
-            w_nTemplateNo = GetInputTemplateNo()
-            if (w_nTemplateNo < 0) return@setOnClickListener
-            HostLib.getInstance(activity).FPCmdProc().Run_CmdEnroll(w_nTemplateNo, m_bForce)
-            viewModel.currentSwitch.value?.isChecked = false
-        }
-
-        btnIdentify.setOnClickListener {
-            val runCmdidentify = HostLib.getInstance(activity).FPCmdProc().Run_CmdIdentify(m_bForce)
-            if (runCmdidentify > 1) {
-                viewModel.currentSwitch.value?.isChecked = false
-            }
-        }
-
-        btnVerify.setOnClickListener {
-            val w_nTemplateNo: Int
-            w_nTemplateNo = GetInputTemplateNo()
-            if (w_nTemplateNo < 0) return@setOnClickListener
-            HostLib.getInstance(activity).FPCmdProc().Run_CmdVerify(w_nTemplateNo, m_bForce)
-            viewModel.currentSwitch.value?.isChecked = false
-        }
-
-        btnGetEnrollCount.setOnClickListener {
-            HostLib.getInstance(activity).FPCmdProc().Run_CmdGetUserCount(m_bForce)
-            viewModel.currentSwitch.value?.isChecked = false
-        }
-
-        btnRemoveAll.setOnClickListener {
-            HostLib.getInstance(activity).FPCmdProc().Run_CmdDeleteAll(m_bForce)
-        }
-
-        getWindow(activity).addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        spnBaudrate.setSelection(4)
-        m_TemplateData = ByteArray(DevComm.SZ_MAX_RECORD_SIZE)
-        HostLib.getInstance(activity).FPCmdProc().GetDeviceList(spnDevice)
-        HostLib.getInstance(activity).FPCmdProc().SetListener(object : FPCommandListener {
-            override fun cmdProcReturn(
-                p_nCmdCode: Int,
-                p_nRetCode: Int,
-                p_nParam1: Int,
-                p_nParam2: Int
-            ) {
-                ProcResponsePacket(p_nCmdCode, p_nRetCode, p_nParam1, p_nParam2)
-            }
-
-            override fun cmdProcReturnData(p_pData: ByteArray, p_nSize: Int) {
-                var i: Int
-                if (p_nSize > DevComm.SZ_MAX_RECORD_SIZE) {
-                } else {
-                    System.arraycopy(p_pData, 0, m_TemplateData, 0, p_nSize)
-                    m_nTemplateSize = p_nSize
-                }
-            }
-
-            override fun cmdProcShowText(p_szInfo: String) { // show information
-                showToast(p_szInfo)
-            }
-        }) {
-
-        }
-
-        spnBaudrate.setOnItemSelectedListener(object :
-            AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View,
-                position: Int,
-                id: Long
-            ) {
-                m_nBaudrate =
-                    if (position == 0) 9600 else if (position == 1) 19200 else if (position == 2) 38400 else if (position == 3) 57600 else 115200
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-
-            }
-        })
-
-        spnDevice.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View,
-                position: Int,
-                id: Long
-            ) {
-                m_szDevice = spnDevice.getItemAtPosition(position).toString()
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        })
     }
 
     override fun onDestroy() {
@@ -426,6 +183,7 @@ class CameraFragment : Fragment() {
 ////        val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
 ////        Timber.d("Preview aspect ratio: $screenAspectRatio")
 //
+//        val rotation = viewFinder.display.rotation
 //        val rotation = viewFinder.display.rotation
 //        Timber.d("bindCameraUserCases message: rotation $rotation ")
 
@@ -494,7 +252,6 @@ class CameraFragment : Fragment() {
         }
         bindCameraUserCases(CameraView.CaptureMode.IMAGE)
         imageCapture?.let {
-            switch_brightness_365nm
             val photoFile =
                 createFile(
                     getOutputDirectory(),
@@ -578,7 +335,6 @@ class CameraFragment : Fragment() {
                                     requireContext().showToast(R.string.video_saved_error)
                                 }
                             }
-
                         })
                     isRecording = true
                     delay(VIDEO_DURATION)
@@ -599,6 +355,7 @@ class CameraFragment : Fragment() {
 
     /**
      *  [androidx.camera.core.ImageAnalysisConfig] requires enum value of
+     *  [androidx.camera.core.AspectRatio]. Currently it has values of 4:3 & 16:9.
      *  [androidx.camera.core.AspectRatio]. Currently it has values of 4:3 & 16:9.
      *
      *  Detecting the most suitable ratio for dimensions provided in @params by counting absolute
