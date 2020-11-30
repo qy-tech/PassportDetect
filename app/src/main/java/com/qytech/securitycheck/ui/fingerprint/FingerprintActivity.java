@@ -70,7 +70,7 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
             getSupportActionBar().setHomeButtonEnabled(true);
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        InitWidget();
+        initWidget();
         m_spBaudrate.setSelection(4);
         HostLib.getInstance(this).FPCmdProc().GetDeviceList(m_spDevice);
         HostLib.getInstance(this).FPCmdProc().SetListener(new IFPListener.FPCommandListener() {
@@ -108,7 +108,7 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
     }
 
 
-    public void InitWidget() {
+    public void initWidget() {
         m_btnEnroll = findViewById(R.id.btnEnroll);
         m_btnIdentify = findViewById(R.id.btnIdentify);
         m_btnGetUserCount = findViewById(R.id.btnGetEnrollCount);

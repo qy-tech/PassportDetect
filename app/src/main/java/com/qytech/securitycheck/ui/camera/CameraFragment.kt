@@ -1,15 +1,16 @@
 package com.qytech.securitycheck.ui.camera
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.view.KeyEvent.ACTION_DOWN
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.MotionEvent.ACTION_DOWN
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
@@ -21,7 +22,6 @@ import androidx.core.net.toFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.qytech.securitycheck.MainActivity
 import com.qytech.securitycheck.PreviewActivity
 import com.qytech.securitycheck.R
 import com.qytech.securitycheck.databinding.CameraFragmentBinding
@@ -81,6 +81,7 @@ class CameraFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         btn_fingerprint.setOnClickListener {
+            viewModel.currentSwitch.value?.isChecked = false
             val intent = Intent(activity, FingerprintActivity::class.java)
             startActivity(intent)
         }
@@ -91,7 +92,6 @@ class CameraFragment : Fragment() {
                 p_nParam1: Int,
                 p_nParam2: Int
             ) {
-
                 ProcResponsePacketfragment(p_nCmdCode, p_nRetCode, p_nParam1, p_nParam2)
             }
 
