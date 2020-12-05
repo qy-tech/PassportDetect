@@ -950,10 +950,10 @@ public class DevComm {
 
         while (w_nReadLen < w_nTotalLen) {
 //	    	w_nResult = m_uartDriver.ReadData(m_abyPacket, CMD_PACKET_LEN + 2);
-            if (System.currentTimeMillis() - w_nTime > 9000000) {
+            /*if (System.currentTimeMillis() - w_nTime > 1500) {
                 m_nUARTReadLen = 0;
                 return false;
-            }
+            }*/
 
             i = 0;
             while (m_bBufferHandle) {
@@ -1004,10 +1004,10 @@ public class DevComm {
 
         while (w_nReadLen < w_nTotalLen) {
 //	    	w_nResult = m_uartDriver.ReadData(m_abyPacket2, CMD_PACKET_LEN + 2);
-            if (System.currentTimeMillis() - w_nTime > 9000000) {
+            /*if (System.currentTimeMillis() - w_nTime > 1500) {
                 m_nUARTReadLen = 0;
                 return false;
-            }
+            }*/
 
             if (m_nUARTReadLen <= 0)
                 continue;
@@ -1083,10 +1083,10 @@ public class DevComm {
         w_nTime = System.currentTimeMillis();
 
         while (w_nTotalRecvLen < p_nLen) {
-            if (System.currentTimeMillis() - w_nTime > 9000000) {
+            /*if (System.currentTimeMillis() - w_nTime > 1500) {
                 m_nUARTReadLen = 0;
                 return false;
-            }
+            }*/
 
             if (m_nUARTReadLen <= 0)
                 continue;

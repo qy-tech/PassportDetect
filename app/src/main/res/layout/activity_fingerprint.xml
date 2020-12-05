@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".ui.fingerprint.FingerprintActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -15,15 +15,15 @@
         app:title="@string/app_name" />
 
     <LinearLayout
-        android:padding="50dp"
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="50dp">
 
         <LinearLayout
-            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             tools:ignore="MissingConstraints">
 
             <TextView
@@ -41,16 +41,16 @@
         </LinearLayout>
 
         <LinearLayout
-            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             tools:ignore="MissingConstraints">
 
             <TextView
                 android:id="@+id/textBaudrate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="波特率: "/>
+                android:text="波特率: " />
 
             <Spinner
                 android:id="@+id/spnBaudrate"
@@ -61,22 +61,23 @@
         </LinearLayout>
 
         <LinearLayout
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             tools:ignore="MissingConstraints">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
                 <LinearLayout
-                    android:visibility="invisible"
-                    android:layout_gravity="center"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:visibility="invisible"
                     android:weightSum="1">
 
                     <TextView
@@ -90,50 +91,54 @@
                         android:textSize="50sp" />
 
                     <EditText
-                        android:focusable="true"
-                        android:focusableInTouchMode="true"
                         android:id="@+id/editUserID"
                         android:layout_width="100dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="0.8"
                         android:layout_gravity="center"
-                        android:gravity="center"
                         android:layout_marginLeft="10dp"
+                        android:layout_weight="0.8"
                         android:background="#6666"
-                        android:textSize="50sp"
                         android:editable="true"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:gravity="center"
                         android:inputType="number"
-                        android:text="1" />
+                        android:text="1"
+                        android:textSize="50sp" />
 
                 </LinearLayout>
 
                 <Button
+                    android:layout_marginTop="10dp"
                     android:id="@+id/btnEnroll"
                     android:layout_width="match_parent"
-                    android:textSize="30sp"
                     android:layout_height="80dp"
-                    android:text="录制指纹" />
+                    android:text="录制指纹"
+                    android:textSize="30sp" />
 
                 <Button
                     android:id="@+id/btnIdentify"
                     android:layout_width="match_parent"
-                    android:textSize="30sp"
                     android:layout_height="80dp"
-                    android:text="验证指纹" />
+                    android:layout_marginTop="10dp"
+                    android:text="验证指纹"
+                    android:textSize="30sp" />
 
                 <Button
                     android:id="@+id/btnGetEnrollCount"
                     android:layout_width="match_parent"
-                    android:textSize="30sp"
                     android:layout_height="80dp"
-                    android:text="指纹数量" />
+                    android:layout_marginTop="10dp"
+                    android:text="指纹数量"
+                    android:textSize="30sp" />
 
                 <Button
+                    android:layout_marginTop="10dp"
                     android:id="@+id/btnRemoveAll"
                     android:layout_width="match_parent"
-                    android:textSize="30sp"
                     android:layout_height="80dp"
-                    android:text="清除所有"/>
+                    android:text="清除所有"
+                    android:textSize="30sp" />
 
             </LinearLayout>
 

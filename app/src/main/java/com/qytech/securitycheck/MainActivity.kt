@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.qytech.securitycheck.ui.camera.CameraFragment
-import com.qytech.securitycheck.ui.camera.CameraViewModel
 import timber.log.Timber
 
 

@@ -2,6 +2,7 @@ package com.szadst.szoemhost_lib;
 
 import android.app.Activity;
 import android.os.SystemClock;
+import android.util.Log;
 import android.widget.Spinner;
 
 public class CommandProc implements ICommandProc {
@@ -145,7 +146,6 @@ public class CommandProc implements ICommandProc {
         if (CheckInputTemplateNo(p_nTmpNo) == false) {
             return 1;
         }
-
         // check force
         w_nIntRet = CheckForce(p_bForce, new IFPListener.FPCancelWaitListener() {
             @Override
@@ -154,15 +154,16 @@ public class CommandProc implements ICommandProc {
             }
         });
         if (w_nIntRet == 1) {
-            return 99; // busy
+            return 99;
         } else if (w_nIntRet == 2) {
             return 0;
         }
-
         w_nTemplateNo = p_nTmpNo;
         m_strPost = "放置你的手指";
         m_lsCmdProc.cmdProcShowText(m_strPost);
         Run_Command_1P((short) DevComm.CMD_ENROLL_CODE, (short) w_nTemplateNo);
+        Log.e("TAG", "Run_CmdEnroll: "+w_nIntRet );
+
         return 0;
     }
 
@@ -1286,9 +1287,9 @@ public class CommandProc implements ICommandProc {
 
         // check force
         if (!m_bCmdDone) {
-            if (!p_bForce)
+            if (!p_bForce) {
                 return 1; // busy
-
+            }
             m_lsCancelWait = iCancel;
             Run_CmdCancel();
             return 2;

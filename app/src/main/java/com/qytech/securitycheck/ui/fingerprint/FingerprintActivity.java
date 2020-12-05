@@ -2,6 +2,7 @@ package com.qytech.securitycheck.ui.fingerprint;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -14,6 +15,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -23,16 +25,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.qytech.securitycheck.GlobalApplication;
 import com.qytech.securitycheck.R;
 import com.qytech.securitycheck.utils.PreferenceUtils;
+import com.qytech.securitycheck.utils.SpUtil;
+import com.szadst.szoemhost_lib.CommandProc;
 import com.szadst.szoemhost_lib.DevComm;
 import com.szadst.szoemhost_lib.HostLib;
 import com.szadst.szoemhost_lib.IFPListener;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-import timber.log.Timber;
 
 public class FingerprintActivity extends AppCompatActivity implements View.OnClickListener {
     Button m_btnEnroll;
@@ -43,7 +44,6 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
     TextView m_txtStatus;
     Spinner m_spBaudrate;
     Spinner m_spDevice;
-    int m_nUserID;
     String m_strPost;
     boolean m_bForce = false;
     private PopupWindow popupWindow;
@@ -69,6 +69,11 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setHomeButtonEnabled(true);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initWidget();
         m_spBaudrate.setSelection(4);
@@ -107,7 +112,6 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
             onDeleteAllBtn();
     }
 
-
     public void initWidget() {
         m_btnEnroll = findViewById(R.id.btnEnroll);
         m_btnIdentify = findViewById(R.id.btnIdentify);
@@ -136,19 +140,20 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
         inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflate = inflater.inflate(R.layout.pop_fingerprint, null);
         m_txtStatus = inflate.findViewById(R.id.txtStatus);
-        TextView cancel = inflate.findViewById(R.id.cancel);
-        cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                popupWindow.dismiss();
-            }
-        });
         popupWindow.setContentView(inflate);
         popupWindow.setOutsideTouchable(false);
         popupWindow.showAtLocation(inflate, Gravity.CENTER | Gravity.CENTER_HORIZONTAL, 0, 0);
         w_nTemplateNo = PreferenceUtils.INSTANCE.findPreference("TEMPLATE_NO", 1);//GetInputTemplateNo();
-        if (w_nTemplateNo < 0) return;
+        /*if (w_nTemplateNo < 0) return;
+        Log.e("TAG", "onEnrollBtn: "+w_nTemplateNo);*/
         HostLib.getInstance(this).FPCmdProc().Run_CmdEnroll(w_nTemplateNo, m_bForce);
+        Toast toast = Toast.makeText(FingerprintActivity.this, "确保手指清洁干燥,录制中请勿切换手指", Toast.LENGTH_SHORT);
+        LinearLayout layout = (LinearLayout) toast.getView();
+        TextView tv = (TextView) layout.getChildAt(0);
+        tv.setTextSize(30);
+        tv.setTextColor(Color.WHITE);
+        toast.getView().setBackgroundColor(Color.DKGRAY);
+        toast.show();
     }
 
     public void onIdentifyBtn() {
@@ -156,13 +161,6 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
         inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflate = inflater.inflate(R.layout.pop_fingerprint, null);
         m_txtStatus = inflate.findViewById(R.id.txtStatus);
-        TextView cancel = inflate.findViewById(R.id.cancel);
-        cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                popupWindow.dismiss();
-            }
-        });
         popupWindow.setContentView(inflate);
         popupWindow.setOutsideTouchable(false);
         popupWindow.showAtLocation(inflate, Gravity.CENTER | Gravity.CENTER_HORIZONTAL, 0, 0);
@@ -170,29 +168,18 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
     }
 
     public void onGetUserCount() {
-        int count = HostLib.getInstance(this).FPCmdProc().Run_CmdGetUserCount(m_bForce);
-        Timber.d("OnGetUserCount %s", count);
+        HostLib.getInstance(this).FPCmdProc().Run_CmdGetUserCount(m_bForce);
     }
 
     public void onDeleteAllBtn() {
         HostLib.getInstance(this).FPCmdProc().Run_CmdDeleteAll(m_bForce);
+        PreferenceUtils.INSTANCE.putPreference("TEMPLATE_NO", 1);
         PreferenceUtils.INSTANCE.clear();
     }
 
-    /*@SuppressLint("SetTextI18n")
-    private int getInputTemplateNo() {
-        m_editUserID.setText(counts + "");
-        String str = m_editUserID.getText().toString();
-        try {
-            m_nUserID = Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-        return m_nUserID;
-    }*/
-
     @SuppressLint("DefaultLocale")
     private void procResponsePacket(int p_nCode, int p_nRet, int p_nParam1, int p_nParam2) {
+
         m_strPost = "";
         if (m_txtStatus != null) {
             m_txtStatus.setText(m_strPost);
@@ -216,32 +203,75 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
                             m_strPost = "再来一次";
                             break;
                         default:
-                            Toast.makeText(this, "录制成功", Toast.LENGTH_SHORT).show();
-                            popupWindow.setOutsideTouchable(false);
-                            popupWindow.dismiss();
                             int lastNo = PreferenceUtils.INSTANCE.findPreference("TEMPLATE_NO", 1) + 1;
                             PreferenceUtils.INSTANCE.putPreference("TEMPLATE_NO", lastNo);
+                            Log.e("TAG", "procResponsePacket: "+lastNo);
+                            Toast toast = Toast.makeText(this, "录制成功", Toast.LENGTH_SHORT);
+                            LinearLayout layout = (LinearLayout) toast.getView();
+                            TextView tv = (TextView) layout.getChildAt(0);
+                            tv.setTextSize(30);
+                            tv.setTextColor(Color.WHITE);
+                            toast.getView().setBackgroundColor(Color.DKGRAY);
+                            toast.show();
+                            popupWindow.setOutsideTouchable(false);
+                            popupWindow.dismiss();
+                            break;
                     }
                 } else {
-                    popupWindow.setOutsideTouchable(false);
-                    popupWindow.dismiss();
                     if (HostLib.getInstance(this).FPDevComm().LOBYTE((short) p_nParam1) == DevComm.ERR_BAD_QUALITY) {
-                        Toast.makeText(this, "重新录制", Toast.LENGTH_SHORT).show();
+                        m_strPost = "继续录制";
+                    } else if (p_nParam1 == DevComm.ERR_DUPLICATION_ID) {
+                        popupWindow.setOutsideTouchable(false);
+                        popupWindow.dismiss();
+                        Toast toast = Toast.makeText(this, "指纹重复", Toast.LENGTH_SHORT);
+                        LinearLayout layout = (LinearLayout) toast.getView();
+                        TextView tv = (TextView) layout.getChildAt(0);
+                        tv.setTextSize(30);
+                        tv.setTextColor(Color.WHITE);
+                        toast.getView().setBackgroundColor(Color.DKGRAY);
+                        toast.show();
+                        popupWindow.dismiss();
                     } else {
-                        if (p_nParam1 == DevComm.ERR_DUPLICATION_ID) {
-                            Toast.makeText(FingerprintActivity.this, "指纹重复", Toast.LENGTH_SHORT).show();
-                        }
+                        Toast toast = Toast.makeText(this, "录制失败,请确保手指清洁干燥", Toast.LENGTH_SHORT);
+                        LinearLayout layout = (LinearLayout) toast.getView();
+                        TextView tv = (TextView) layout.getChildAt(0);
+                        tv.setTextSize(30);
+                        tv.setTextColor(Color.WHITE);
+                        toast.getView().setBackgroundColor(Color.DKGRAY);
+                        toast.show();
+                        popupWindow.dismiss();
                     }
                 }
                 break;
             case (short) DevComm.CMD_IDENTIFY_CODE:
                 if (p_nRet == (short) DevComm.ERR_SUCCESS) {
-                    Toast.makeText(this, "验证成功", Toast.LENGTH_SHORT).show();
-                    if (popupWindow != null && popupWindow.isShowing()) {
-                        popupWindow.dismiss();
+                    switch (p_nParam1) {
+                        case (short) DevComm.NEED_RELEASE_FINGER:
+                            m_strPost = "收起手指";
+                            break;
+                        case (short) DevComm.NEED_FIRST_SWEEP:
+                            m_strPost = "放置手指";
+                            break;
+                        default:
+                            Toast toast = Toast.makeText(this, "验证成功", Toast.LENGTH_SHORT);
+                            LinearLayout layout = (LinearLayout) toast.getView();
+                            TextView tv = (TextView) layout.getChildAt(0);
+                            tv.setTextSize(30);
+                            tv.setTextColor(Color.WHITE);
+                            toast.getView().setBackgroundColor(Color.DKGRAY);
+                            toast.show();
+                            if (popupWindow != null && popupWindow.isShowing()) {
+                                popupWindow.dismiss();
+                            }
                     }
                 } else {
-                    Toast.makeText(this, "验证失败", Toast.LENGTH_SHORT).show();
+                    Toast toast = Toast.makeText(this, "验证失败", Toast.LENGTH_SHORT);
+                    LinearLayout layout = (LinearLayout) toast.getView();
+                    TextView tv = (TextView) layout.getChildAt(0);
+                    tv.setTextSize(30);
+                    tv.setTextColor(Color.WHITE);
+                    toast.getView().setBackgroundColor(Color.DKGRAY);
+                    toast.show();
                     if (popupWindow != null && popupWindow.isShowing()) {
                         popupWindow.dismiss();
                     }
@@ -249,19 +279,41 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
                 break;
             case (short) DevComm.CMD_GET_ENROLL_COUNT_CODE:
                 if (p_nRet == (short) DevComm.ERR_SUCCESS) {
-                    Toast.makeText(this, String.format("当前指纹数为 : %d", p_nParam1), Toast.LENGTH_SHORT).show();
+                    Toast toast = Toast.makeText(this, String.format("当前指纹数为 : %d", p_nParam1), Toast.LENGTH_SHORT);
+                    LinearLayout layout = (LinearLayout) toast.getView();
+                    TextView tv = (TextView) layout.getChildAt(0);
+                    tv.setTextSize(30);
+                    tv.setTextColor(Color.WHITE);
+                    toast.getView().setBackgroundColor(Color.DKGRAY);
+                    toast.show();
                 } else {
-                    Toast.makeText(this, "获取指纹数失败", Toast.LENGTH_SHORT).show();
+                    Toast toast = Toast.makeText(this, "获取指纹数失败", Toast.LENGTH_SHORT);
+                    LinearLayout layout = (LinearLayout) toast.getView();
+                    TextView tv = (TextView) layout.getChildAt(0);
+                    tv.setTextSize(30);
+                    tv.setTextColor(Color.WHITE);
+                    toast.getView().setBackgroundColor(Color.DKGRAY);
+                    toast.show();
                 }
                 break;
             case (short) DevComm.CMD_CLEAR_ALLTEMPLATE_CODE:
                 if (p_nRet == (short) DevComm.ERR_SUCCESS) {
-                    Toast.makeText(this, String.format("清除指纹数为 : %d", p_nParam1), Toast.LENGTH_SHORT).show();
+                    Toast toast = Toast.makeText(this, String.format("清除指纹数为 : %d", p_nParam1), Toast.LENGTH_SHORT);
+                    LinearLayout layout = (LinearLayout) toast.getView();
+                    TextView tv = (TextView) layout.getChildAt(0);
+                    tv.setTextSize(30);
+                    tv.setTextColor(Color.WHITE);
+                    toast.getView().setBackgroundColor(Color.DKGRAY);
+                    toast.show();
                 } else {
-                    Toast.makeText(this, "清除失败", Toast.LENGTH_SHORT).show();
+                    Toast toast = Toast.makeText(this, "清除失败", Toast.LENGTH_SHORT);
+                    LinearLayout layout = (LinearLayout) toast.getView();
+                    TextView tv = (TextView) layout.getChildAt(0);
+                    tv.setTextSize(30);
+                    tv.setTextColor(Color.WHITE);
+                    toast.getView().setBackgroundColor(Color.DKGRAY);
+                    toast.show();
                 }
-                break;
-            default:
                 break;
         }
         if (m_txtStatus != null) {

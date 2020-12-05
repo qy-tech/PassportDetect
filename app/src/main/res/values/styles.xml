@@ -14,4 +14,9 @@
         <item>115200</item>
     </string-array>
 
+    <style name="popmenu_animation" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/pop_show_show</item>
+<!--        <item name="android:windowExitAnimation">@anim/pop_show_hide</item>-->
+    </style>
+
 </resources>

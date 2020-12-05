@@ -2,18 +2,25 @@ package com.qytech.securitycheck.ui.camera
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.view.KeyEvent.ACTION_DOWN
+import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.MotionEvent.ACTION_DOWN
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
+import android.widget.LinearLayout
+import android.widget.PopupWindow
+import android.widget.TextView
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.CameraView
@@ -22,14 +29,23 @@ import androidx.core.net.toFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.qytech.securitycheck.GlobalApplication
 import com.qytech.securitycheck.PreviewActivity
 import com.qytech.securitycheck.R
 import com.qytech.securitycheck.databinding.CameraFragmentBinding
 import com.qytech.securitycheck.extensions.showToast
 import com.qytech.securitycheck.ui.fingerprint.FingerprintActivity
+import com.qytech.securitycheck.ui.fingerprint.LoginActivity
 import com.qytech.securitycheck.utils.FileUtils
 import com.qytech.securitycheck.utils.LuminosityAnalyzer
+import com.qytech.securitycheck.utils.PreferenceUtils
+import com.qytech.securitycheck.utils.PreferenceUtils.clear
+import com.qytech.securitycheck.utils.PreferenceUtils.findPreference
+import com.qytech.securitycheck.utils.PreferenceUtils.putPreference
+import com.qytech.securitycheck.utils.SpUtil
 import com.szadst.szoemhost_lib.DevComm
+import com.szadst.szoemhost_lib.DevComm.NEED_FIRST_SWEEP
+import com.szadst.szoemhost_lib.DevComm.NEED_RELEASE_FINGER
 import com.szadst.szoemhost_lib.HostLib
 import com.szadst.szoemhost_lib.IFPListener.FPCommandListener
 import kotlinx.android.synthetic.main.camera_fragment.*
@@ -47,6 +63,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 
+@RequiresApi(Build.VERSION_CODES.M)
 class CameraFragment : Fragment() {
     companion object {
         fun newInstance() = CameraFragment()
@@ -71,19 +88,35 @@ class CameraFragment : Fragment() {
     private var cameraProvider: ProcessCameraProvider? = null
     var m_szDevice: String? = "/dev/ttyS4"
     var m_nBaudrate = 115200
-
+    var popupWindow: PopupWindow? = null
+    private lateinit var m_txtStatus: TextView
+    val enrollCount = findPreference("TEMPLATE_NO", 1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         HostLib.getInstance(activity).FPCmdProc().OpenDevice(m_szDevice, m_nBaudrate)
     }
 
+    private val login by lazy {
+        val data = SpUtil.getData(GlobalApplication.instance, "loginusername")
+        if (!data.isEmpty()) {
+            btn_fingerprint.visibility = VISIBLE
+        }
+        if (data.isEmpty()) {
+            btn_fingerprint.visibility = GONE
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        btn_fingerprint.setOnClickListener {
-            viewModel.currentSwitch.value?.isChecked = false
-            val intent = Intent(activity, FingerprintActivity::class.java)
-            startActivity(intent)
+        initLogin()
+        login
+        if (btn_fingerprint != null) {
+            btn_fingerprint.setOnClickListener {
+                viewModel.currentSwitch.value?.isChecked = false
+                val intent = Intent(activity, FingerprintActivity::class.java)
+                startActivity(intent)
+            }
         }
         HostLib.getInstance(activity).FPCmdProc().SetListener(object : FPCommandListener {
             override fun cmdProcReturn(
@@ -92,34 +125,79 @@ class CameraFragment : Fragment() {
                 p_nParam1: Int,
                 p_nParam2: Int
             ) {
-                ProcResponsePacketfragment(p_nCmdCode, p_nRetCode, p_nParam1, p_nParam2)
+                procResponsePacketfragment(p_nCmdCode, p_nRetCode, p_nParam1, p_nParam2)
             }
 
-            override fun cmdProcReturnData(p_pData: ByteArray, p_nSize: Int) {}
+            override fun cmdProcReturnData(op_pData: ByteArray, p_nSize: Int) {}
 
             override fun cmdProcShowText(p_szInfo: String) {}
         }) {}
     }
 
+    private fun initLogin() {
+        btn_login.setOnClickListener {
+            val intent = Intent(activity, LoginActivity::class.java)
+            startActivity(intent)
+        }
+    }
 
-    private fun ProcResponsePacketfragment(
+    private fun procResponsePacketfragment(
         p_nCode: Int,
         p_nRet: Int,
         p_nParam1: Int,
         p_nParam2: Int
     ) {
+        var m_strPost = ""
+        m_txtStatus.text = m_strPost
         when (p_nCode) {
-            DevComm.CMD_IDENTIFY_CODE -> {
-                if (p_nRet != DevComm.ERR_SUCCESS) {
-                    viewModel.currentSwitch.value?.isChecked = false
-                    viewModel.popupWindow?.dismiss()
-                    showToast("指纹验证失败")
+            DevComm.CMD_IDENTIFY_CODE ->
+                if (p_nRet == DevComm.ERR_SUCCESS) {
+                    when (p_nParam1) {
+                        NEED_RELEASE_FINGER.toShort().toInt() -> m_strPost = "收起手指"
+                        NEED_FIRST_SWEEP.toShort().toInt() -> m_strPost = "放置手指"
+                        else -> {
+                            agin_btn.visibility = GONE
+                            val toast: Toast = Toast.makeText(
+                                activity,
+                                "验证成功",
+                                Toast.LENGTH_SHORT
+                            )
+                            val layout =
+                                toast.view as LinearLayout?
+                            val tv =
+                                layout!!.getChildAt(0) as TextView
+                            tv.textSize = 30f
+                            tv.setTextColor(Color.WHITE)
+                            toast.view!!.setBackgroundColor(Color.DKGRAY)
+                            toast.show()
+                            if (popupWindow != null && popupWindow!!.isShowing) {
+                                popupWindow!!.dismiss()
+                            }
+                        }
+                    }
                 } else {
-                    viewModel.currentSwitch.value?.isChecked = true
-                    viewModel.popupWindow?.dismiss()
+                    agin_btn.visibility = VISIBLE
+                    val lastNo = findPreference("isident", 1) + 1
+                    putPreference("isident", lastNo)
+                    val toast: Toast = Toast.makeText(activity, "验证失败", Toast.LENGTH_SHORT)
+                    val layout =
+                        toast.view as LinearLayout?
+                    val tv = layout!!.getChildAt(0) as TextView
+                    tv.textSize = 30f
+                    tv.setTextColor(Color.WHITE)
+                    toast.view!!.setBackgroundColor(Color.DKGRAY)
+                    toast.show()
+                    if (popupWindow != null && popupWindow!!.isShowing) {
+                        popupWindow!!.dismiss()
+                    }
                 }
-            }
         }
+        m_txtStatus.text = m_strPost
+    }
+
+    override fun onPause() {
+        super.onPause()
+        putPreference("isident", 0)
     }
 
     override fun onCreateView(
@@ -151,6 +229,116 @@ class CameraFragment : Fragment() {
 
         btn_picture_viewer.setOnClickListener {
             PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
+        }
+
+        val data = SpUtil.getData(GlobalApplication.instance, "loginusername")
+        Timber.d("data is $data")
+        if (data.isEmpty()) {
+            val toast = Toast.makeText(
+                GlobalApplication.instance,
+                "请先登录用户",
+                Toast.LENGTH_SHORT
+            )
+            val layout =
+                toast.view as LinearLayout?
+            val tv = layout!!.getChildAt(0) as TextView
+            tv.textSize = 30f
+            tv.setTextColor(Color.WHITE)
+            toast.view!!.setBackgroundColor(Color.DKGRAY)
+            toast.show()
+        } else if (enrollCount < 2) {
+            val toast = Toast.makeText(
+                GlobalApplication.instance,
+                "请录制指纹",
+                Toast.LENGTH_SHORT
+            )
+            val layout =
+                toast.view as LinearLayout?
+            val tv = layout!!.getChildAt(0) as TextView
+            tv.textSize = 30f
+            tv.setTextColor(Color.WHITE)
+            toast.view!!.setBackgroundColor(Color.DKGRAY)
+            toast.show()
+        } else
+            dataBinding.root.post {
+                if (data.isNotEmpty() && enrollCount >= 2) {
+                    if (HostLib.getInstance(GlobalApplication.instance).FPCmdProc()
+                            .Run_CmdIdentify(false) <= 0
+                    ) {
+                        val popupView = LayoutInflater.from(requireContext())
+                            .inflate(R.layout.pop_fingerprint, null)
+                        m_txtStatus = popupView.findViewById<TextView>(R.id.txtStatus)
+                        Timber.d("popupView  is $popupView")
+                        popupWindow = PopupWindow(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        popupWindow!!.contentView = popupView
+                        popupWindow!!.isClippingEnabled = true
+                        popupWindow!!.isOutsideTouchable = false
+                        popupWindow!!.isFocusable = false
+                        Timber.d("root view is ${requireView().rootView}")
+                        popupWindow!!.showAtLocation(
+                            requireView().rootView,
+                            Gravity.CENTER or Gravity.CENTER_HORIZONTAL,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        val toast = Toast.makeText(
+                            GlobalApplication.instance,
+                            "请验证指纹",
+                            Toast.LENGTH_SHORT
+                        )
+                        val layout =
+                            toast.view as LinearLayout?
+                        val tv = layout!!.getChildAt(0) as TextView
+                        tv.textSize = 30f
+                        tv.setTextColor(Color.WHITE)
+                        toast.view!!.setBackgroundColor(Color.DKGRAY)
+                        toast.show()
+                    }
+                }
+            }
+        agin_btn.setOnClickListener {
+            dataBinding.root.post {
+                if (data.isNotEmpty() && enrollCount >= 2) {
+                    if (HostLib.getInstance(GlobalApplication.instance).FPCmdProc()
+                            .Run_CmdIdentify(false) <= 0
+                    ) {
+                        val popupView = LayoutInflater.from(requireContext())
+                            .inflate(R.layout.pop_fingerprint, null)
+                        m_txtStatus = popupView.findViewById<TextView>(R.id.txtStatus)
+                        Timber.d("popupView  is $popupView")
+                        popupWindow = PopupWindow(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        popupWindow!!.contentView = popupView
+                        popupWindow!!.isClippingEnabled = true
+                        popupWindow!!.isOutsideTouchable = false
+                        popupWindow!!.isFocusable = false
+                        Timber.d("root view is ${requireView().rootView}")
+                        popupWindow!!.showAtLocation(
+                            requireView().rootView,
+                            Gravity.CENTER or Gravity.CENTER_HORIZONTAL,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        val toast = Toast.makeText(
+                            GlobalApplication.instance,
+                            "请验证指纹",
+                            Toast.LENGTH_SHORT
+                        )
+                        val layout =
+                            toast.view as LinearLayout?
+                        val tv = layout!!.getChildAt(0) as TextView
+                        tv.textSize = 30f
+                        tv.setTextColor(Color.WHITE)
+                        toast.view!!.setBackgroundColor(Color.DKGRAY)
+                        toast.show()
+                    }
+                }
+            }
         }
     }
 

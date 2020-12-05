@@ -1,10 +1,20 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+
+apply plugin: 'org.greenrobot.greendao'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 30
+
+    greendao {
+        schemaVersion 2 //当前数据库版本
+        daoPackage 'com.qutech.daodemo.greenDao'//数据库全路径（自定义）
+        targetGenDir 'src/main/java'//存放位置
+        /* //设置为true以自动生成单元测试。
+         generateTests false*/
+    }
 
     defaultConfig {
         applicationId "com.qytech.securitycheck"
@@ -31,6 +41,7 @@ android {
     buildFeatures {
         dataBinding true
     }
+
 }
 
 dependencies {
@@ -68,11 +79,11 @@ dependencies {
     kapt 'com.github.bumptech.glide:compiler:4.11.0'
 
     implementation 'cn.jzvd:jiaozivideoplayer:7.5.0'
-
+    implementation 'org.greenrobot:greendao:3.3.0'
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
-
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation "com.jakewharton.timber:timber:4.7.1"
+
 }

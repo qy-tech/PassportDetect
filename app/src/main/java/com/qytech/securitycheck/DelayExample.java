@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 public  class DelayExample {
     public static void main() {
         try {
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(2);
         } catch (Exception e) {
             e.printStackTrace();
         }

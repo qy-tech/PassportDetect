@@ -1,10 +1,8 @@
 package com.qytech.securitycheck.ui.camera
 
-import android.app.PendingIntent.getActivity
-import android.view.*
-import android.widget.CompoundButton
-import android.widget.PopupWindow
-import android.widget.TextView
+import android.graphics.Color
+import android.view.View
+import android.widget.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,9 +10,11 @@ import androidx.lifecycle.viewModelScope
 import com.qytech.securitycheck.GlobalApplication
 import com.qytech.securitycheck.R
 import com.qytech.securitycheck.R.id
-import com.qytech.securitycheck.extension.showToast
 import com.qytech.securitycheck.utils.FileUtils
+import com.qytech.securitycheck.utils.PreferenceUtils
+import com.qytech.securitycheck.utils.SpUtil
 import com.szadst.szoemhost_lib.HostLib
+import kotlinx.android.synthetic.main.camera_fragment.view.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -59,7 +59,6 @@ class CameraViewModel : ViewModel() {
         get() = _interval
 
     private var hrlampJob: Job? = null
-    var popupWindow: PopupWindow? = null
     private fun closeAllBrightness() {
         BRIGHTNESS_MAP.forEach {
             toggleBrightness(it.value, false)
@@ -72,62 +71,72 @@ class CameraViewModel : ViewModel() {
 
     fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
         Timber.d("onCheckedChanged message:  ${buttonView?.id}")
-        if (isChecked && HostLib.getInstance(GlobalApplication.instance).FPCmdProc()
-                .Run_CmdIdentify(false) <= 0
-        ) {
-            GlobalApplication.instance.showToast("请验证指纹")
-            val popupView =
-                LayoutInflater.from(buttonView?.context).inflate(R.layout.pop_fingerprint, null)
-            popupWindow = PopupWindow(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-            val cancel = popupView.findViewById<TextView>(id.cancel)
-            cancel.setOnClickListener {
-                popupWindow!!.dismiss()
-                return@setOnClickListener
-            }
-            popupWindow!!.contentView = popupView
-            popupWindow!!.isClippingEnabled = true
-            popupWindow!!.isOutsideTouchable = false
-            popupWindow!!.isFocusable = false
-            popupWindow!!.showAtLocation(
-                popupView,
-                Gravity.CENTER or Gravity.CENTER_HORIZONTAL,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-            _currentSwitch.value = buttonView
+        val data = SpUtil.getData(GlobalApplication.instance, "loginusername")  //当前用户是否已经登陆
+        val findPreference = PreferenceUtils.findPreference("isident", 1)  //验证指纹是否正确
+        val enrollCount = PreferenceUtils.findPreference("TEMPLATE_NO", 1) //判断当前有没有录制指纹
+        val isIdentTrue = PreferenceUtils.findPreference("isIdentTrue", true) //判断重新验证是否正确
+        if (isChecked && data.isEmpty()) {
+            val toast = Toast.makeText(GlobalApplication.instance, "请先登录用户", Toast.LENGTH_SHORT)
+            val layout =
+                toast.view as LinearLayout?
+            val tv = layout!!.getChildAt(0) as TextView
+            tv.textSize = 30f
+            tv.setTextColor(Color.WHITE)
+            toast.view!!.setBackgroundColor(Color.DKGRAY)
+            toast.show()
             buttonView?.isChecked = false
             return
-        }
-        if (popupWindow?.isShowing!! && popupWindow != null) {
+        } else if (enrollCount < 2) {
+            val toast = Toast.makeText(
+                GlobalApplication.instance,
+                "请录制指纹",
+                Toast.LENGTH_SHORT
+            )
+            val layout =
+                toast.view as LinearLayout?
+            val tv = layout!!.getChildAt(0) as TextView
+            tv.textSize = 30f
+            tv.setTextColor(Color.WHITE)
+            toast.view!!.setBackgroundColor(Color.DKGRAY)
+            toast.show()
             buttonView?.isChecked = false
             return
-        }
-        when (buttonView?.id) {
-            id.switch_brightness_365nm -> {
-                _currentBrightness.value = if (isChecked) LED_365NM else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_365NM), isChecked)
+        } else if (findPreference >= 1) {
+            val toast = Toast.makeText(GlobalApplication.instance, "重新验证指纹", Toast.LENGTH_SHORT)
+            val layout =
+                toast.view as LinearLayout?
+            val tv = layout!!.getChildAt(0) as TextView
+            tv.textSize = 30f
+            tv.setTextColor(Color.WHITE)
+            toast.view!!.setBackgroundColor(Color.DKGRAY)
+            toast.show()
+            buttonView?.isChecked = false
+            return
+        }  else
+            when (buttonView?.id) {
+                id.switch_brightness_365nm -> {
+                    _currentBrightness.value = if (isChecked) LED_365NM else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_365NM), isChecked)
+                }
+                id.switch_brightness_410nm -> {
+                    _currentBrightness.value = if (isChecked) LED_410NM else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_410NM), isChecked)
+                }
+                id.switch_brightness_960nm -> {
+                    _currentBrightness.value = if (isChecked) LED_940NM else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_940NM), isChecked)
+                }
+                id.switch_brightness_white -> {
+                    _currentBrightness.value = if (isChecked) LED_WHITE else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_WHITE), isChecked)
+                }
+                id.switch_brightness_HRlamp -> {
+                    _currentBrightness.value = if (isChecked) LED_HRLAMP else LED_OFF
+                    toggleBrightness(BRIGHTNESS_MAP.getValue(LED_HRLAMP), isChecked)
+                    hrlampToggle(isChecked)
+                }
             }
-            id.switch_brightness_410nm -> {
-                _currentBrightness.value = if (isChecked) LED_410NM else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_410NM), isChecked)
-            }
-            id.switch_brightness_960nm -> {
-                _currentBrightness.value = if (isChecked) LED_940NM else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_940NM), isChecked)
-            }
-            id.switch_brightness_white -> {
-                _currentBrightness.value = if (isChecked) LED_WHITE else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_WHITE), isChecked)
-            }
-            id.switch_brightness_HRlamp -> {
-                _currentBrightness.value = if (isChecked) LED_HRLAMP else LED_OFF
-                toggleBrightness(BRIGHTNESS_MAP.getValue(LED_HRLAMP), isChecked)
-                hrlampToggle(isChecked)
-            }
-        }
+
     }
 
     private fun hrlampToggle(toggle: Boolean) {
@@ -180,6 +189,7 @@ class CameraViewModel : ViewModel() {
             cancelHrlampJob()
             hrlampToggle(_currentBrightness.value == LED_HRLAMP)
         }
+
     }
 
     override fun onCleared() {
