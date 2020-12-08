@@ -9,7 +9,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,6 +30,8 @@ import com.qytech.securitycheck.utils.MeiziDaoUtils;
 import com.qytech.securitycheck.utils.SpUtil;
 
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EnrollActivity extends AppCompatActivity {
 
@@ -122,6 +128,7 @@ public class EnrollActivity extends AppCompatActivity {
                     toast.getView().setBackgroundColor(Color.DKGRAY);
                     toast.show();
                     saveRegisterInfo(userName, psw);
+                    SpUtil.INSTANCE.saveData(EnrollActivity.this,"enrollUsername",userName);
                     Intent data = new Intent();
                     data.putExtra("userName", userName);
                     setResult(RESULT_OK, data);

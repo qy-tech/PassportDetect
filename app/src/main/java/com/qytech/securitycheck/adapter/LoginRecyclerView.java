@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -60,14 +61,12 @@ public class LoginRecyclerView extends RecyclerView.Adapter<LoginRecyclerView.Vi
         }
     }
 
-    //第一步 定义接口
     public interface OnItemClickListener {
         void onClick(int position);
     }
 
     private OnItemClickListener listener;
 
-    //第二步， 写一个公共的方法
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
     }

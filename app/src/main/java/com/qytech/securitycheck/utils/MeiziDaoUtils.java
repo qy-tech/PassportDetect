@@ -3,6 +3,7 @@ package com.qytech.securitycheck.utils;
 import android.content.Context;
 import android.util.Log;
 
+import com.qutech.daodemo.greenDao.DaoSession;
 import com.qutech.daodemo.greenDao.DbBeanDao;
 import com.qytech.securitycheck.db.DaoManager;
 import com.qytech.securitycheck.db.DbBean;

@@ -13,7 +13,6 @@ public class DaoManager {
 
     private Context context;
 
-    //多线程中要被共享的使用volatile关键字修饰
     private volatile static DaoManager manager = new DaoManager();
     private static DaoMaster sDaoMaster;
     private static DaoMaster.DevOpenHelper sHelper;

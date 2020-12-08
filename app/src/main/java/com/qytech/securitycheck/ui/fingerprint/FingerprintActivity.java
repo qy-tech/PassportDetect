@@ -157,6 +157,16 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
     }
 
     public void onIdentifyBtn() {
+        Integer enrollCount = PreferenceUtils.INSTANCE.findPreference("TEMPLATE_NO", 1); //判断当前有没有录制指纹
+        if (enrollCount < 2){
+            Toast toast = Toast.makeText(FingerprintActivity.this, "请录制指纹", Toast.LENGTH_SHORT);
+            LinearLayout layout = (LinearLayout) toast.getView();
+            TextView tv = (TextView) layout.getChildAt(0);
+            tv.setTextSize(30);
+            tv.setTextColor(Color.WHITE);
+            toast.getView().setBackgroundColor(Color.DKGRAY);
+            toast.show();
+        }else {
         popupWindow = new PopupWindow(this);
         inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflate = inflater.inflate(R.layout.pop_fingerprint, null);
@@ -165,6 +175,7 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
         popupWindow.setOutsideTouchable(false);
         popupWindow.showAtLocation(inflate, Gravity.CENTER | Gravity.CENTER_HORIZONTAL, 0, 0);
         HostLib.getInstance(this).FPCmdProc().Run_CmdIdentify(m_bForce);
+        }
     }
 
     public void onGetUserCount() {
@@ -205,7 +216,6 @@ public class FingerprintActivity extends AppCompatActivity implements View.OnCli
                         default:
                             int lastNo = PreferenceUtils.INSTANCE.findPreference("TEMPLATE_NO", 1) + 1;
                             PreferenceUtils.INSTANCE.putPreference("TEMPLATE_NO", lastNo);
-                            Log.e("TAG", "procResponsePacket: "+lastNo);
                             Toast toast = Toast.makeText(this, "录制成功", Toast.LENGTH_SHORT);
                             LinearLayout layout = (LinearLayout) toast.getView();
                             TextView tv = (TextView) layout.getChildAt(0);

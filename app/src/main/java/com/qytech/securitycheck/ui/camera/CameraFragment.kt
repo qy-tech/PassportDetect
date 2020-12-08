@@ -1,6 +1,7 @@
 package com.qytech.securitycheck.ui.camera
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.media.MediaScannerConnection
@@ -12,8 +13,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
+import android.view.View.*
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.LinearLayout
@@ -89,7 +89,7 @@ class CameraFragment : Fragment() {
     var m_szDevice: String? = "/dev/ttyS4"
     var m_nBaudrate = 115200
     var popupWindow: PopupWindow? = null
-    private lateinit var m_txtStatus: TextView
+    private var m_txtStatus: TextView? = null
     val enrollCount = findPreference("TEMPLATE_NO", 1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,20 +97,17 @@ class CameraFragment : Fragment() {
         HostLib.getInstance(activity).FPCmdProc().OpenDevice(m_szDevice, m_nBaudrate)
     }
 
-    private val login by lazy {
-        val data = SpUtil.getData(GlobalApplication.instance, "loginusername")
-        if (!data.isEmpty()) {
-            btn_fingerprint.visibility = VISIBLE
-        }
-        if (data.isEmpty()) {
-            btn_fingerprint.visibility = GONE
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         initLogin()
-        login
+        val data = SpUtil.getData(GlobalApplication.instance, "loginusername")
+        val isLogins = findPreference("isLogins", 13)
+        if (!data.isEmpty() && isLogins == 13) {
+            btn_fingerprint.visibility = VISIBLE
+        } else if (data.isEmpty()) {
+            btn_fingerprint.visibility = GONE
+            agin_btn.visibility = INVISIBLE
+        }
         if (btn_fingerprint != null) {
             btn_fingerprint.setOnClickListener {
                 viewModel.currentSwitch.value?.isChecked = false
@@ -148,7 +145,7 @@ class CameraFragment : Fragment() {
         p_nParam2: Int
     ) {
         var m_strPost = ""
-        m_txtStatus.text = m_strPost
+        m_txtStatus?.text = m_strPost
         when (p_nCode) {
             DevComm.CMD_IDENTIFY_CODE ->
                 if (p_nRet == DevComm.ERR_SUCCESS) {
@@ -157,6 +154,8 @@ class CameraFragment : Fragment() {
                         NEED_FIRST_SWEEP.toShort().toInt() -> m_strPost = "放置手指"
                         else -> {
                             agin_btn.visibility = GONE
+                            putPreference("isident", 0)
+                            putPreference("popupWindowisShowing", false)
                             val toast: Toast = Toast.makeText(
                                 activity,
                                 "验证成功",
@@ -177,8 +176,8 @@ class CameraFragment : Fragment() {
                     }
                 } else {
                     agin_btn.visibility = VISIBLE
-                    val lastNo = findPreference("isident", 1) + 1
-                    putPreference("isident", lastNo)
+                    putPreference("isident", 50)
+                    putPreference("popupWindowisShowing", false)
                     val toast: Toast = Toast.makeText(activity, "验证失败", Toast.LENGTH_SHORT)
                     val layout =
                         toast.view as LinearLayout?
@@ -192,7 +191,7 @@ class CameraFragment : Fragment() {
                     }
                 }
         }
-        m_txtStatus.text = m_strPost
+        m_txtStatus?.text = m_strPost
     }
 
     override fun onPause() {
@@ -212,6 +211,7 @@ class CameraFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(CameraViewModel::class.java)
+        viewModel.currentSwitch.value?.isChecked = false
         dataBinding.lifecycleOwner = viewLifecycleOwner
         dataBinding.viewModel = viewModel
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -228,9 +228,59 @@ class CameraFragment : Fragment() {
         }
 
         btn_picture_viewer.setOnClickListener {
-            PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
+            val data = SpUtil.getData(GlobalApplication.instance, "loginusername")  //当前用户是否已经登陆
+            val findPreference = PreferenceUtils.findPreference("isident", 50)  //验证指纹是否正确
+            val enrollCount = PreferenceUtils.findPreference("TEMPLATE_NO", 1) //判断当前有没有录制指纹
+            val popupWindowisShowing = PreferenceUtils.findPreference("popupWindowisShowing", true)
+            if (popupWindowisShowing) {
+                return@setOnClickListener
+            }
+            if (findPreference == 50) {
+                val toast = Toast.makeText(GlobalApplication.instance, "重新验证指纹", Toast.LENGTH_SHORT)
+                val layout =
+                    toast.view as LinearLayout?
+                val tv = layout!!.getChildAt(0) as TextView
+                tv.textSize = 30f
+                tv.setTextColor(Color.WHITE)
+                toast.view!!.setBackgroundColor(Color.DKGRAY)
+                toast.show()
+                return@setOnClickListener
+            } else
+                if (data.isEmpty()) {
+                    val toast =
+                        Toast.makeText(GlobalApplication.instance, "请先登录用户", Toast.LENGTH_SHORT)
+                    val layout =
+                        toast.view as LinearLayout?
+                    val tv = layout!!.getChildAt(0) as TextView
+                    tv.textSize = 30f
+                    tv.setTextColor(Color.WHITE)
+                    toast.view!!.setBackgroundColor(Color.DKGRAY)
+                    toast.show()
+                    return@setOnClickListener
+                } else if (enrollCount < 2) {
+                    val toast = Toast.makeText(
+                        GlobalApplication.instance,
+                        "请录制指纹",
+                        Toast.LENGTH_SHORT
+                    )
+                    val layout =
+                        toast.view as LinearLayout?
+                    val tv = layout!!.getChildAt(0) as TextView
+                    tv.textSize = 30f
+                    tv.setTextColor(Color.WHITE)
+                    toast.view!!.setBackgroundColor(Color.DKGRAY)
+                    toast.show()
+                    return@setOnClickListener
+                } else {
+                    PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
+                }
         }
 
+        isEnrollTrue()
+    }
+
+    private fun isEnrollTrue() {
+        val isLogins = findPreference("isLogins", 13)
         val data = SpUtil.getData(GlobalApplication.instance, "loginusername")
         Timber.d("data is $data")
         if (data.isEmpty()) {
@@ -261,14 +311,13 @@ class CameraFragment : Fragment() {
             toast.show()
         } else
             dataBinding.root.post {
-                if (data.isNotEmpty() && enrollCount >= 2) {
+                if (data.isNotEmpty() && enrollCount >= 2 && isLogins == 13) {
                     if (HostLib.getInstance(GlobalApplication.instance).FPCmdProc()
-                            .Run_CmdIdentify(false) <= 0
-                    ) {
+                            .Run_CmdIdentify(false) <= 0) {
+                        putPreference("popupWindowisShowing", true)
                         val popupView = LayoutInflater.from(requireContext())
                             .inflate(R.layout.pop_fingerprint, null)
                         m_txtStatus = popupView.findViewById<TextView>(R.id.txtStatus)
-                        Timber.d("popupView  is $popupView")
                         popupWindow = PopupWindow(
                             ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT
@@ -317,7 +366,6 @@ class CameraFragment : Fragment() {
                         popupWindow!!.isClippingEnabled = true
                         popupWindow!!.isOutsideTouchable = false
                         popupWindow!!.isFocusable = false
-                        Timber.d("root view is ${requireView().rootView}")
                         popupWindow!!.showAtLocation(
                             requireView().rootView,
                             Gravity.CENTER or Gravity.CENTER_HORIZONTAL,
@@ -366,7 +414,7 @@ class CameraFragment : Fragment() {
         captureMode = mode
         // Get screen metrics used to setup camera for full screen resolution
 ////        val metrics = DisplayMetrics().also { viewFinder.display.getRealMetrics(it) }
-////        Timber.d("Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}")
+//        Timber.d("Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}")
 ////
 ////        val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
 ////        Timber.d("Preview aspect ratio: $screenAspectRatio")

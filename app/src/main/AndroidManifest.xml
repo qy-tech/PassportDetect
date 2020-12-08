@@ -41,8 +41,8 @@
         <activity android:name=".DetailActivity" />
         <activity
             android:name=".MainActivity"
-            android:launchMode="standard"
-            android:windowSoftInputMode="stateHidden">
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
