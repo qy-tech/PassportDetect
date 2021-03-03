@@ -49,7 +49,7 @@ class CameraFragment : Fragment() {
         private const val FILENAME = "yyyy-MM-dd-HH-mm-ss"
         private const val PHOTO_EXTENSION = ".jpg"
         private const val VIDEO_EXTENSION = ".mp4"
-        private const val VIDEO_DURATION = 5_000L
+        private const val VIDEO_DURATION = 10_000L
 
     }
 
