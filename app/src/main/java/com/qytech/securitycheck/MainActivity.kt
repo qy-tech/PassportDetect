@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.qytech.securitycheck.ui.camera.CameraFragment
+import com.qytech.securitycheck.ui.opengl.GlCameraFragment
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -32,7 +33,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 if (savedInstanceState == null) {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.container, CameraFragment.newInstance())
+                        .replace(R.id.container, GlCameraFragment.newInstance())
                         .commitNow()
                 }
             }
@@ -53,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             }.let {
                 if (it) {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.container, CameraFragment.newInstance())
+                        .replace(R.id.container, GlCameraFragment.newInstance())
                         .commitNow()
                 }
             }
