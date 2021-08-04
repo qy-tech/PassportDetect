@@ -4,8 +4,9 @@ import android.widget.ImageView
 import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
 import cn.jzvd.JzvdStd
-import com.bumptech.glide.Glide
+import coil.load
 import timber.log.Timber
+import java.io.File
 
 /**
  * Created by Jax on 2020/11/10.
@@ -23,7 +24,11 @@ fun RecyclerView.bindRecyclerViewAdapter(adapter: RecyclerView.Adapter<*>) {
 @BindingAdapter(value = ["setImageUrl"])
 fun ImageView.bindImageUrl(url: String?) {
     if (url != null && url.isNotBlank()) {
-        Glide.with(context).load(url).into(this)
+        if (url.startsWith("/")) {
+            this.load(File(url))
+        } else {
+            this.load(url)
+        }
     }
 }
 

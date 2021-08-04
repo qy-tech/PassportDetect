@@ -1,7 +1,9 @@
 package com.qytech.securitycheck.ui.camera
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.hardware.camera2.CameraManager
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
@@ -11,6 +13,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.CameraView
@@ -35,6 +40,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -58,14 +64,15 @@ class CameraFragment : Fragment() {
     private lateinit var dataBinding: CameraFragmentBinding
 
     private lateinit var preview: Preview
+    private lateinit var cameraSelector: CameraSelector
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture? = null
     private var imageAnalysis: ImageAnalysis? = null
     private lateinit var cameraExecutor: ExecutorService
-    private var captureMode: CameraView.CaptureMode? = null
     private var isRecording = false
 
     private var cameraProvider: ProcessCameraProvider? = null
+    private lateinit var cameraIdList: Array<String>
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -81,19 +88,37 @@ class CameraFragment : Fragment() {
         dataBinding.lifecycleOwner = viewLifecycleOwner
         dataBinding.viewModel = viewModel
         cameraExecutor = Executors.newSingleThreadExecutor()
-        viewFinder.post {
+        dataBinding.viewFinder.post {
             startCamera()
         }
-        btn_take_pictures.setOnClickListener {
-            if (viewModel.currentBrightness.value == "HRlamp") {
+        dataBinding.btnTakePictures.setOnClickListener {
+            /*if (viewModel.currentBrightness.value == "HRlamp") {
                 recordVideo()
             } else {
                 takePicture()
-            }
+            }*/
+            takePicture()
         }
-        btn_picture_viewer.setOnClickListener {
+        dataBinding.btnPictureViewer.setOnClickListener {
             PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
         }
+        val cameraManager =
+            requireActivity().getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        cameraIdList = cameraManager.cameraIdList
+        cameraIdList.forEach {
+            Timber.d("camera id $it")
+        }
+        ArrayAdapter<String>(
+            requireContext(),
+            android.R.layout.simple_spinner_item
+        ).also { adapter ->
+            dataBinding.spinnerCameraList.adapter = adapter
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            adapter.addAll(cameraIdList.toMutableList())
+            adapter.notifyDataSetChanged()
+        }
+        dataBinding.spinnerCameraList.onItemSelectedListener = onItemSelectedListener
+
     }
 
     override fun onDestroy() {
@@ -101,42 +126,74 @@ class CameraFragment : Fragment() {
         cameraExecutor.shutdown()
     }
 
+
+    private val onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        override fun onItemSelected(
+            parent: AdapterView<*>?,
+            view: View?,
+            position: Int,
+            id: Long
+        ) {
+            if (::cameraSelector.isInitialized) {
+                cameraSelector = getCameraSelector(cameraIdList[position])
+                bindCameraUserCases()
+            }
+        }
+
+        override fun onNothingSelected(parent: AdapterView<*>?) {
+        }
+    }
+
+
+    /**
+     * 通过摄像头 id 获取 CameraSelector
+     * 由于我们 Dpin 默认情况下是放在了最后一个摄像头，所以需要通过 id 来打开
+     * @param cameraId 摄像头 id
+     * @return CameraSelector
+     * */
+
+    @SuppressLint("UnsafeExperimentalUsageError", "UnsafeOptInUsageError", "RestrictedApi")
+    private fun getCameraSelector(cameraId: String): CameraSelector {
+        Timber.d("getCameraSelector $cameraId")
+        return CameraSelector.Builder()
+            .addCameraFilter { cameras ->
+                Timber.d("addCameraFilter is ${cameras.size}")
+                val result = cameras.filter {
+                    cameraId == Camera2CameraInfo.from(it).cameraId
+                }
+                result
+            }
+            .build()
+    }
+
+
     private fun startCamera() {
         ProcessCameraProvider.getInstance(requireContext()).apply {
             addListener({
 
                 cameraProvider = this.get()
-
+                cameraSelector = if (hasBackCamera()) {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                } else {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                }
                 bindCameraUserCases()
 
             }, ContextCompat.getMainExecutor(requireContext()))
         }
     }
 
-    @SuppressLint("RestrictedApi")
-    private fun bindCameraUserCases(mode: CameraView.CaptureMode = CameraView.CaptureMode.IMAGE) {
-        if (captureMode == mode) {
-            return
-        }
-        captureMode = mode
+    @SuppressLint("RestrictedApi", "UnsafeOptInUsageError")
+    private fun bindCameraUserCases() {
         // Get screen metrics used to setup camera for full screen resolution
-////        val metrics = DisplayMetrics().also { viewFinder.display.getRealMetrics(it) }
-////        Timber.d("Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}")
-////
-////        val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
-////        Timber.d("Preview aspect ratio: $screenAspectRatio")
-//
-//        val rotation = viewFinder.display.rotation
-//        Timber.d("bindCameraUserCases message: rotation $rotation ")
+        val metrics = resources.displayMetrics
+        Timber.d("Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}")
+        val screenAspectRatio = aspectRatio(metrics.widthPixels, metrics.heightPixels)
+        Timber.d("Preview aspect ratio: $screenAspectRatio")
 
-        val cameraSelector = if (hasFrontCamera()) {
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        } else {
-            CameraSelector.DEFAULT_BACK_CAMERA
-        }
 
         preview = Preview.Builder()
-//            .setTargetAspectRatio(screenAspectRatio)
+            .setTargetAspectRatio(screenAspectRatio)
 //            .setTargetRotation(rotation)
             .build()
             .also {
@@ -145,12 +202,12 @@ class CameraFragment : Fragment() {
 
         imageCapture = ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-//            .setTargetAspectRatio(screenAspectRatio)
+            .setTargetAspectRatio(screenAspectRatio)
 //            .setTargetRotation(rotation)
             .build()
 
         imageAnalysis = ImageAnalysis.Builder()
-//            .setTargetAspectRatio(screenAspectRatio)
+            .setTargetAspectRatio(screenAspectRatio)
 //            .setTargetRotation(rotation)
             .build()
             .also {
@@ -160,28 +217,18 @@ class CameraFragment : Fragment() {
             }
 
         videoCapture = VideoCapture.Builder()
-//            .setTargetAspectRatio(screenAspectRatio)
+            .setTargetAspectRatio(screenAspectRatio)
 //            .setTargetRotation(rotation)
             .build()
 
         try {
             cameraProvider?.unbindAll()
-            if (mode == CameraView.CaptureMode.IMAGE) {
-                cameraProvider?.bindToLifecycle(
-                    viewLifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    imageCapture,
-                    imageAnalysis,
-                )
-            } else if (mode == CameraView.CaptureMode.VIDEO) {
-                cameraProvider?.bindToLifecycle(
-                    viewLifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    videoCapture
-                )
-            }
+            cameraProvider?.bindToLifecycle(
+                viewLifecycleOwner,
+                cameraSelector,
+                preview,
+                imageCapture,
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -192,7 +239,7 @@ class CameraFragment : Fragment() {
             showToast(R.string.recording)
             return
         }
-        bindCameraUserCases(CameraView.CaptureMode.IMAGE)
+        //bindCameraUserCases()
         imageCapture?.let {
             val photoFile =
                 createFile(getOutputDirectory(), viewModel.currentBrightness.value, PHOTO_EXTENSION)
@@ -231,14 +278,14 @@ class CameraFragment : Fragment() {
         }
     }
 
-    @SuppressLint("RestrictedApi")
+    @SuppressLint("RestrictedApi", "UnsafeOptInUsageError")
     private fun recordVideo() {
         if (isRecording) {
             showToast(R.string.recording)
             return
         }
         lifecycleScope.launch {
-            bindCameraUserCases(CameraView.CaptureMode.VIDEO)
+            //bindCameraUserCases(CameraView.CaptureMode.VIDEO)
             try {
                 videoCapture?.let {
                     val videoFile = createFile(

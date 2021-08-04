@@ -1,0 +1,1 @@
+/Users/jax/Documents/Android/SecurityCheck/buildSrc/build/classes/kotlin/main/Libs.class:/Users/jax/Documents/Android/SecurityCheck/buildSrc/build/classes/kotlin/main/Versions.class
