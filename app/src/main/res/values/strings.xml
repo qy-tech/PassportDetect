@@ -14,4 +14,6 @@
     <string name="open_file_fail">文件异常,请检查文件</string>
     <string name="file_not_exists">文件不存在,请检查文件</string>
     <string name="hrlamp_interval">跑马灯间隔时间%d ms</string>
+    <string name="take_picture_left">左侧光拍照</string>
+    <string name="take_picture_right">右侧光拍照</string>
 </resources>

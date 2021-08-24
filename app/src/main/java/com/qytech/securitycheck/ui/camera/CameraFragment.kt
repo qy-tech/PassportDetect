@@ -94,6 +94,18 @@ class CameraFragment : Fragment() {
         btn_picture_viewer.setOnClickListener {
             PreviewActivity.start(requireContext(), getOutputDirectory().absolutePath)
         }
+        dataBinding.btnTakePicturesLeft.setOnClickListener {
+            viewModel.toggleLeftGroup(true)
+            takePicture {
+                viewModel.toggleLeftGroup(false)
+            }
+        }
+        dataBinding.btnTakePicturesRight.setOnClickListener {
+            viewModel.toggleRightGroup(true)
+            takePicture {
+                viewModel.toggleRightGroup(false)
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -187,7 +199,7 @@ class CameraFragment : Fragment() {
         }
     }
 
-    private fun takePicture() {
+    private fun takePicture(onSaveImageResult: () -> Unit = {}) {
         if (isRecording) {
             showToast(R.string.recording)
             return
@@ -218,6 +230,7 @@ class CameraFragment : Fragment() {
                         }
                         lifecycleScope.launch(Dispatchers.Main) {
                             requireContext().showToast(R.string.image_saved)
+                            onSaveImageResult()
                         }
                     }
 
@@ -225,6 +238,7 @@ class CameraFragment : Fragment() {
                         Timber.e("OnImageSavedCallback error $exception ")
                         lifecycleScope.launch(Dispatchers.Main) {
                             requireContext().showToast(R.string.image_saved_error)
+                            onSaveImageResult()
                         }
                     }
                 })

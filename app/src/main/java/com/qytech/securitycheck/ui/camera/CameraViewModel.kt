@@ -24,6 +24,8 @@ class CameraViewModel : ViewModel() {
         private const val LED_WHITE = "White"
         private const val LED_HRLAMP = "HRlamp"
         private const val LED_OFF = "default"
+        private const val LED_LEFT = "left"
+        private const val LED_RIGHT = "right"
 
         val BRIGHTNESS_MAP = mapOf<String, String>(
             LED_365NM to "/sys/class/leds/365nm-led/brightness",
@@ -58,6 +60,10 @@ class CameraViewModel : ViewModel() {
 
     fun toggleBrightness(path: String, toggle: Boolean) {
         FileUtils.write2File(File(path), if (toggle) BRIGHTNESS_ON else BRIGHTNESS_OFF)
+    }
+
+    fun toggleHrlampBrightness(path: String, toggle: Boolean) {
+        FileUtils.write2File(File(path), if (toggle) BRIGHTNESS_VALUE_MAX else BRIGHTNESS_OFF)
     }
 
     fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
@@ -102,6 +108,20 @@ class CameraViewModel : ViewModel() {
                     toggleHrlampGroup(it)
                 }
             }
+        }
+    }
+
+    fun toggleLeftGroup(toggle: Boolean) {
+        _currentBrightness.value = if (toggle) LED_LEFT else LED_OFF
+        HRLAMP_LIST_LEFT.forEach {
+            toggleHrlampBrightness(HRLAMP_PATH_FORMAT.format(it), toggle)
+        }
+    }
+
+    fun toggleRightGroup(toggle: Boolean) {
+        _currentBrightness.value = if (toggle) LED_LEFT else LED_OFF
+        HRLAMP_LIST_RIGHT.forEach {
+            toggleHrlampBrightness(HRLAMP_PATH_FORMAT.format(it), toggle)
         }
     }
 
